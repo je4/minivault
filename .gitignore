@@ -18,5 +18,7 @@
 # vendor/
 
 # Go workspace file
+go.sum
 go.work
 go.work.sum
+certs/*

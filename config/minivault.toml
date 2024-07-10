@@ -1,0 +1,30 @@
+localaddr = ":8761"
+externaladdr = "https://localhost:8761"
+loglevel = "DEBUG"
+tokenstore = "badger"
+
+[badgerstore]
+folder = "/tmp/minivault"
+hexkey = ""
+cachesize = 0
+
+[webtls]
+type = "dev"
+
+[log]
+level = "debug"
+
+[log.stash]
+#logstash_host="sb-uwf4.swissbib.unibas.ch"
+logstashhost="localhost"
+logstashport=5046
+logstashtracelevel="ERROR"
+namespace="miniresolver"
+dataset=""
+#dataset="logs-mediaserver"
+[log.stash.tls]
+type="file"
+cert="certs/ub-log.ub.unibas.ch.cert.pem"
+key="certs/ub-log.ub.unibas.ch.key.pem"
+ca=["certs/ca.crt"]
+interval="1h"
