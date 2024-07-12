@@ -21,6 +21,8 @@ type MiniVaultConfig struct {
 	LocalAddr    string                 `toml:"localaddr"`
 	ExternalAddr string                 `toml:"externaladdr"`
 	WebTLS       loaderConfig.TLSConfig `toml:"webtls"`
+	PolicyFile   string                 `toml:"policyfile"`
+	TokenXOR     uint64                 `toml:"tokenxor"`
 	LogFile      string                 `toml:"logfile"`
 	LogLevel     string                 `toml:"loglevel"`
 	Log          zLogger.Config         `toml:"log"`

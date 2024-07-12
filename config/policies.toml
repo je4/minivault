@@ -1,0 +1,4 @@
+[[policy]]
+    Name = "ubnt"
+    URIs = ["grpc://ubmedia.ubnt.com:50051"]
+    DNS = ["ubmedia.ubnt.com"]

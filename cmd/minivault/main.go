@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"github.com/je4/minivault/v2/config"
 	"github.com/je4/minivault/v2/pkg/badgerStore"
+	"github.com/je4/minivault/v2/pkg/policy"
+	"github.com/je4/minivault/v2/pkg/rest"
 	"github.com/je4/minivault/v2/pkg/token"
-	"github.com/je4/minivault/v2/pkg/web"
 	"github.com/je4/trustutil/v2/pkg/loader"
 	"github.com/je4/utils/v2/pkg/zLogger"
 	ublogger "gitlab.switch.ch/ub-unibas/go-ublogger"
@@ -83,34 +84,44 @@ func main() {
 	switch conf.TokenStore {
 	case "badger":
 		if conf.BadgerStore == nil {
-			logger.Fatal().Msg("badger store configuration missing")
+			logger.Panic().Msg("badger store configuration missing")
 		}
 		var key []byte
-		if conf.BadgerStore.HexKey == "" {
+		if conf.BadgerStore.HexKey != "" {
 			key, err = hex.DecodeString(string(conf.BadgerStore.HexKey))
 			if err != nil {
-				logger.Fatal().Msgf("cannot decode hex key '%s': %v", conf.BadgerStore.HexKey, err)
+				logger.Panic().Msgf("cannot decode hex key '%s': %v", conf.BadgerStore.HexKey, err)
 			}
 		}
 		tokenStore, err = badgerStore.NewBadgerStore(conf.BadgerStore.Folder, key, conf.BadgerStore.CacheSize)
 		if err != nil {
-			logger.Fatal().Msgf("cannot create badger store: %v", err)
+			logger.Panic().Msgf("cannot create badger store: %v", err)
 		}
 	default:
-		logger.Fatal().Msgf("unknown token store '%s'", conf.TokenStore)
+		logger.Panic().Msgf("unknown token store '%s'", conf.TokenStore)
 	}
 	defer tokenStore.Close()
 
+	tokenManager := token.NewManager(tokenStore, conf.TokenXOR)
+
+	policyManager := policy.NewManager(conf.PolicyFile, logger)
+	if err := policyManager.Start(); err != nil {
+		logger.Panic().Err(err).Msg("cannot start policy manager")
+	}
+	defer policyManager.Stop()
+
 	webTLSConfig, webLoader, err := loader.CreateServerLoader(false, &conf.WebTLS, nil, logger)
 	if err != nil {
-		logger.Fatal().Err(err).Msg("cannot create server loader")
+		logger.Panic().Err(err).Msg("cannot create server loader")
 	}
 	defer webLoader.Close()
 
-	ctrl, err := web.NewMainController(
+	ctrl, err := rest.NewMainController(
 		conf.LocalAddr,
 		conf.ExternalAddr,
 		webTLSConfig,
+		tokenManager,
+		policyManager,
 		logger)
 	if err != nil {
 		logger.Fatal().Msgf("cannot create controller: %v", err)

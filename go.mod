@@ -8,6 +8,7 @@ require (
 	github.com/bluele/gcache v0.0.2
 	github.com/deneonet/benc v1.0.9
 	github.com/dgraph-io/badger/v4 v4.2.0
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gin-contrib/cors v1.7.2
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang-jwt/jwt/v5 v5.2.1
@@ -27,6 +28,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgraph-io/ristretto v0.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
@@ -57,10 +59,13 @@ require (
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rs/zerolog v1.33.0 // indirect
+	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/smallstep/certinfo v1.12.2 // indirect
 	github.com/telkomdev/go-stash v1.0.4 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
+	github.com/urfave/cli/v2 v2.27.2 // indirect
+	github.com/xrash/smetrics v0.0.0-20240312152122-5f08fbb34913 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.step.sm/crypto v0.48.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect

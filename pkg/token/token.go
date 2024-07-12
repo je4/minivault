@@ -12,15 +12,28 @@ const (
 	TokenClientServerCert
 )
 
-func NewToken(t Type, expiration time.Time, uris, names []string) *Token {
-	return &Token{t: t, expiration: expiration, uris: uris, names: names}
+var TypeString map[Type]string = map[Type]string{
+	TokenServerCert:       "server_cert",
+	TokenClientCert:       "client_cert",
+	TokenClientServerCert: "client_server_cert",
+}
+
+var StringType map[string]Type = map[string]Type{
+	"server_cert":        TokenServerCert,
+	"client_cert":        TokenClientCert,
+	"client_server_cert": TokenClientServerCert,
+}
+
+func NewToken(t Type, expiration time.Time, policies []string) *Token {
+	return &Token{t: t, expiration: expiration, policies: policies}
 }
 
 type Token struct {
 	t          Type
 	expiration time.Time
-	uris       []string
-	names      []string
+	policies   []string
+	parent     string
+	metadata   map[string]string
 }
 
 func (t *Token) Type() Type {
@@ -31,10 +44,14 @@ func (t *Token) Expiration() time.Time {
 	return t.expiration
 }
 
-func (t *Token) URIs() []string {
-	return t.uris
+func (t *Token) Policies() []string {
+	return t.policies
 }
 
-func (t *Token) Names() []string {
-	return t.names
+func (t *Token) Parent() string {
+	return t.parent
+}
+
+func (t *Token) Metadata() map[string]string {
+	return t.metadata
 }
