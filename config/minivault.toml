@@ -1,8 +1,9 @@
-localaddr = ":8761"
-externaladdr = "https://localhost:8761"
+localaddr = ":8759"
+externaladdr = "https://localhost:8759"
 loglevel = "DEBUG"
 policyfile = "config/policies.toml"
-tokenxor = 14192431797130687763
+tokenxor = 4192431797130687763
+rndsize = 8
 
 tokenstore = "badger"
 

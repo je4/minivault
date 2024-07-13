@@ -2,7 +2,9 @@ package token
 
 import (
 	"context"
+	"crypto/rand"
 	"emperror.dev/errors"
+	"encoding/hex"
 	"fmt"
 	"slices"
 	"sync"
@@ -10,25 +12,27 @@ import (
 )
 
 type CreateStruct struct {
-	Type      string            `json:"type"`
-	Policies  []string          `json:"policies"`
-	Meta      map[string]string `json:"meta"`
-	TTL       string            `json:"ttl"`
-	Renewable bool              `json:"renewable"`
+	Type      string            `json:"type" example:"client_cert"`
+	Policies  []string          `json:"policies" example:"policy1,policy2"`
+	Meta      map[string]string `json:"meta" example:"key1:value1,key2:value2"`
+	TTL       string            `json:"ttl" example:"1h"`
+	Renewable bool              `json:"renewable" example:"false"`
 }
 
-func NewManager(store Store, xor uint64) *Manager {
+func NewManager(store Store, xor uint64, rndSize int) *Manager {
 	return &Manager{
-		Mutex: sync.Mutex{},
-		store: store,
-		xor:   xor,
+		Mutex:   sync.Mutex{},
+		store:   store,
+		xor:     xor,
+		rndSize: rndSize,
 	}
 }
 
 type Manager struct {
 	sync.Mutex
-	store Store
-	xor   uint64
+	store   Store
+	xor     uint64
+	rndSize int
 }
 
 func (m *Manager) Create(parent string, options *CreateStruct) (string, error) {
@@ -65,19 +69,32 @@ func (m *Manager) Create(parent string, options *CreateStruct) (string, error) {
 		if parentToken.Expiration().Before(time.Now()) {
 			return "", errors.Errorf("parent token %s expired", parent)
 		}
-		// Todo: optimize code
-		for _, p := range options.Policies {
-			if !slices.Contains(parentToken.Policies(), p) {
-				return "", errors.Errorf("parent token %s has no policy %s", parent, p)
+		if parentToken.Type() == TokenRoot {
+			if t != TokenParent {
+				return "", errors.Errorf("root token %s cannot have child tokens", parent)
 			}
-		}
-		if parentToken.Expiration().Before(exp) {
-			return "", errors.Errorf("parent token %s expires before child token", parent)
+		} else {
+			if parentToken.Type() != TokenParent {
+				return "", errors.Errorf("parent token %s is not a parent token", parent)
+			}
+			// Todo: optimize code
+			for _, p := range options.Policies {
+				if !slices.Contains(parentToken.Policies(), p) {
+					return "", errors.Errorf("parent token %s has no policy %s", parent, p)
+				}
+			}
+			if parentToken.Expiration().Before(exp) {
+				return "", errors.Errorf("parent token %s expires before child token", parent)
+			}
 		}
 	}
 
 	// generate unique name, looks random but is not...
-	name := fmt.Sprintf("s.%d", uint64(now.UnixNano())^m.xor)
+	rndData := make([]byte, m.rndSize)
+	if _, err := rand.Read(rndData); err != nil {
+		return "", errors.Wrap(err, "cannot generate random data")
+	}
+	name := fmt.Sprintf("%s.%d.%s", TypePrefix[t], uint64(now.UnixNano())^m.xor, hex.EncodeToString(rndData))
 	token := NewToken(t, now.Add(ttl), options.Policies)
 	tokenBin, err := token.MarshalBinary()
 	if err != nil {

@@ -102,13 +102,14 @@ func main() {
 	}
 	defer tokenStore.Close()
 
-	tokenManager := token.NewManager(tokenStore, conf.TokenXOR)
+	tokenManager := token.NewManager(tokenStore, conf.TokenXOR, conf.RndSize)
+
+	var wg = &sync.WaitGroup{}
 
 	policyManager := policy.NewManager(conf.PolicyFile, logger)
-	if err := policyManager.Start(); err != nil {
+	if err := policyManager.Start(wg); err != nil {
 		logger.Panic().Err(err).Msg("cannot start policy manager")
 	}
-	defer policyManager.Stop()
 
 	webTLSConfig, webLoader, err := loader.CreateServerLoader(false, &conf.WebTLS, nil, logger)
 	if err != nil {
@@ -126,15 +127,15 @@ func main() {
 	if err != nil {
 		logger.Fatal().Msgf("cannot create controller: %v", err)
 	}
-	var wg = &sync.WaitGroup{}
 	ctrl.Start(wg)
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
 	fmt.Println("press ctrl+c to stop server")
 	s := <-done
-	fmt.Println("got signal:", s)
+	fmt.Println("Got signal:", s)
 
 	ctrl.GracefulStop()
+	policyManager.Stop()
 	wg.Wait()
 }

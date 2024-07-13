@@ -23,6 +23,7 @@ type MiniVaultConfig struct {
 	WebTLS       loaderConfig.TLSConfig `toml:"webtls"`
 	PolicyFile   string                 `toml:"policyfile"`
 	TokenXOR     uint64                 `toml:"tokenxor"`
+	RndSize      int                    `toml:"rndsize"`
 	LogFile      string                 `toml:"logfile"`
 	LogLevel     string                 `toml:"loglevel"`
 	Log          zLogger.Config         `toml:"log"`

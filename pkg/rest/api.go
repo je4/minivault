@@ -11,6 +11,8 @@ import (
 	"github.com/je4/minivault/v2/pkg/rest/docs"
 	"github.com/je4/minivault/v2/pkg/token"
 	"github.com/je4/utils/v2/pkg/zLogger"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"net/http"
 	"net/url"
 	"strings"
@@ -79,6 +81,7 @@ func (ctrl *controller) Init(tlsConfig *tls.Config) error {
 	v1 := ctrl.router.Group(BASEPATH)
 
 	v1.GET("/ping", ctrl.ping)
+	ctrl.router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	ctrl.server = http.Server{
 		Addr:      ctrl.addr,
@@ -129,4 +132,21 @@ func (ctrl *controller) GracefulStop() {
 // @Router       /ping [get]
 func (ctrl *controller) ping(c *gin.Context) {
 	c.String(http.StatusOK, "pong")
+}
+
+// createToken godoc
+// @Summary      does pong
+// @ID			 post-create-token
+// @Description  create a new token
+// @Tags         mediaserver
+// @Produce      plain
+// @Param 		 item       body token.CreateStruct true "new token to create"
+// @Success      200  {string}  string "token-id"
+// @Failure      400  {object}  HTTPResultMessage
+// @Failure      401  {object}  HTTPResultMessage
+// @Failure      404  {object}  HTTPResultMessage
+// @Failure      500  {object}  HTTPResultMessage
+// @Router       /create-token [post]
+func (ctrl *controller) createToken(c *gin.Context) {
+
 }

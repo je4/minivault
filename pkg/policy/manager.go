@@ -13,6 +13,7 @@ func NewManager(configFile string, logger zLogger.ZLogger) *Manager {
 		policies:   make(map[string]*Policy),
 		configFile: configFile,
 		logger:     logger,
+		stop:       make(chan bool),
 	}
 }
 
@@ -24,7 +25,8 @@ type Manager struct {
 	stop       chan bool
 }
 
-func (m *Manager) Start() error {
+func (m *Manager) Start(wg *sync.WaitGroup) error {
+	wg.Add(1)
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return errors.Wrap(err, "cannot create watcher")
@@ -36,6 +38,8 @@ func (m *Manager) Start() error {
 		return errors.Wrap(err, "cannot load policies")
 	}
 	go func() {
+		defer wg.Done()
+		defer watcher.Close()
 		for {
 			select {
 			case <-m.stop:
