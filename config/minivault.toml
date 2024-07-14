@@ -1,4 +1,6 @@
 localaddr = ":8759"
+adminaddr = ":8758"
+adminbearer = "grmbl"
 externaladdr = "https://localhost:8759"
 loglevel = "DEBUG"
 policyfile = "config/policies.toml"
@@ -13,6 +15,9 @@ hexkey = ""
 cachesize = 0
 
 [webtls]
+type = "dev"
+
+[admintls]
 type = "dev"
 
 [log]

@@ -13,6 +13,7 @@ import (
 	"github.com/je4/utils/v2/pkg/zLogger"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -37,7 +38,7 @@ const BASEPATH = "/api/v1"
 // @in header
 // @name Authorization
 
-func NewMainController(addr, extAddr string, tlsConfig *tls.Config, manager *token.Manager, policyManager *policy.Manager, logger zLogger.ZLogger) (*controller, error) {
+func NewMainController(addr, extAddr, adminAddr, adminBearer string, tlsConfig, adminTLSConfig *tls.Config, tokenManager *token.Manager, policyManager *policy.Manager, logger zLogger.ZLogger) (*controller, error) {
 	u, err := url.Parse(extAddr)
 	if err != nil {
 		return nil, errors.Wrapf(err, "invalid external address '%s'", extAddr)
@@ -45,7 +46,7 @@ func NewMainController(addr, extAddr string, tlsConfig *tls.Config, manager *tok
 	subpath := "/" + strings.Trim(u.Path, "/")
 
 	// programmatically set swagger info
-	docs.SwaggerInfo.Host = strings.TrimRight(fmt.Sprintf("%s:%s", u.Hostname(), u.Port()), " :")
+	//docs.SwaggerInfo.Host = strings.TrimRight(fmt.Sprintf("%s:%s", u.Hostname(), u.Port()), " :")
 	docs.SwaggerInfo.BasePath = "/" + strings.Trim(subpath+BASEPATH, "/")
 	docs.SwaggerInfo.Schemes = []string{"https"}
 
@@ -54,39 +55,80 @@ func NewMainController(addr, extAddr string, tlsConfig *tls.Config, manager *tok
 
 	_logger := logger.With().Str("vaultService", "controller").Logger()
 	c := &controller{
-		addr:    addr,
-		extAddr: extAddr,
-		router:  router,
-		subpath: subpath,
-		logger:  &_logger,
+		addr:          addr,
+		adminAddr:     adminAddr,
+		adminBearer:   adminBearer,
+		extAddr:       extAddr,
+		router:        router,
+		subpath:       subpath,
+		tokenManager:  tokenManager,
+		policyManager: policyManager,
+		logger:        &_logger,
 	}
-	if err := c.Init(tlsConfig); err != nil {
+	if err := c.Init(tlsConfig, adminTLSConfig); err != nil {
 		return nil, errors.Wrap(err, "cannot initialize rest controller")
 	}
 	return c, nil
 }
 
 type controller struct {
-	server  http.Server
-	router  *gin.Engine
-	addr    string
-	extAddr string
-	subpath string
-	logger  zLogger.ZLogger
+	server        http.Server
+	adminServer   http.Server
+	router        *gin.Engine
+	addr          string
+	extAddr       string
+	subpath       string
+	adminAddr     string
+	adminBearer   string
+	tokenManager  *token.Manager
+	policyManager *policy.Manager
+	logger        zLogger.ZLogger
 }
 
-func (ctrl *controller) Init(tlsConfig *tls.Config) error {
+func (ctrl *controller) Init(tlsConfig, adminTLSConfig *tls.Config) error {
+	_, port, err := net.SplitHostPort(ctrl.adminAddr)
+	if err != nil {
+		return errors.Wrapf(err, "invalid admin address '%s'", ctrl.adminAddr)
+	}
+	ctrl.router.Use(cors.Default(), gin.Recovery(), gin.Logger(), func(ctx *gin.Context) {
+		if _, rPort, err := net.SplitHostPort(ctx.Request.Host); err == nil {
+			if rPort == port {
+				auth := ctx.GetHeader("Authorization")
+				if auth != "" {
+					if !strings.HasPrefix(auth, "Bearer ") {
+						ctx.AbortWithStatusJSON(http.StatusUnauthorized, HTTPResultMessage{Message: "missing bearer token"})
+						return
+					}
+					if strings.TrimPrefix(auth, "Bearer ") != ctrl.adminBearer {
+						ctx.AbortWithStatusJSON(http.StatusUnauthorized, HTTPResultMessage{Message: "invalid bearer token"})
+						return
+					}
+					ctx.Set("admin", true)
+					return
+				}
+			}
+		}
+		ctx.Set("admin", false)
+	})
 
-	ctrl.router.Use(cors.Default())
 	v1 := ctrl.router.Group(BASEPATH)
 
 	v1.GET("/ping", ctrl.ping)
+	v1.POST("/auth/token/create", ctrl.createToken)
+	v1.GET("/auth/token/get", ctrl.getToken)
+	v1.DELETE("/auth/token/delete", ctrl.deleteToken)
 	ctrl.router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	ctrl.server = http.Server{
 		Addr:      ctrl.addr,
 		Handler:   ctrl.router,
 		TLSConfig: tlsConfig,
+	}
+
+	ctrl.adminServer = http.Server{
+		Addr:      ctrl.adminAddr,
+		Handler:   ctrl.router,
+		TLSConfig: adminTLSConfig,
 	}
 
 	return nil
@@ -99,15 +141,50 @@ func (ctrl *controller) Start(wg *sync.WaitGroup) {
 
 		if ctrl.server.TLSConfig == nil {
 			fmt.Printf("starting server at http://%s\n", ctrl.addr)
-			if err := ctrl.server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-				// unexpected error. port in use?
-				fmt.Errorf("server on '%s' ended: %v", ctrl.addr, err)
+			if err := ctrl.server.ListenAndServe(); err != nil {
+				if !errors.Is(err, http.ErrServerClosed) {
+					ctrl.logger.Info().Msg("server stopped")
+				} else {
+					// unexpected error. port in use?
+					ctrl.logger.Error().Err(err).Msg("server on '%s' ended")
+				}
 			}
 		} else {
 			fmt.Printf("starting server at https://%s\n", ctrl.addr)
-			if err := ctrl.server.ListenAndServeTLS("", ""); !errors.Is(err, http.ErrServerClosed) {
-				// unexpected error. port in use?
-				fmt.Errorf("server on '%s' ended: %v", ctrl.addr, err)
+			if err := ctrl.server.ListenAndServeTLS("", ""); err != nil {
+				if errors.Is(err, http.ErrServerClosed) {
+					ctrl.logger.Info().Msg("server stopped")
+				} else {
+					// unexpected error. port in use?
+					ctrl.logger.Error().Err(err).Msg("server on '%s' ended")
+				}
+			}
+		}
+		// always returns error. ErrServerClosed on graceful close
+	}()
+	go func() {
+		wg.Add(1)
+		defer wg.Done() // let main know we are done cleaning up
+
+		if ctrl.adminServer.TLSConfig == nil {
+			fmt.Printf("starting admin server at http://%s\n", ctrl.adminAddr)
+			if err := ctrl.adminServer.ListenAndServe(); err != nil {
+				if errors.Is(err, http.ErrServerClosed) {
+					ctrl.logger.Info().Msg("admin server stopped")
+				} else {
+					// unexpected error. port in use?
+					ctrl.logger.Error().Err(err).Msg("admin server on '%s' ended")
+				}
+			}
+		} else {
+			fmt.Printf("starting admin server at https://%s\n", ctrl.adminAddr)
+			if err := ctrl.adminServer.ListenAndServeTLS("", ""); err != nil {
+				if errors.Is(err, http.ErrServerClosed) {
+					ctrl.logger.Info().Msg("admin server stopped")
+				} else {
+					// unexpected error. port in use?
+					ctrl.logger.Error().Err(err).Msg("admin server on '%s' ended")
+				}
 			}
 		}
 		// always returns error. ErrServerClosed on graceful close
@@ -116,10 +193,12 @@ func (ctrl *controller) Start(wg *sync.WaitGroup) {
 
 func (ctrl *controller) Stop() {
 	ctrl.server.Shutdown(context.Background())
+	ctrl.adminServer.Shutdown(context.Background())
 }
 
 func (ctrl *controller) GracefulStop() {
 	ctrl.server.Shutdown(context.Background())
+	ctrl.adminServer.Shutdown(context.Background())
 }
 
 // ping godoc
@@ -127,11 +206,75 @@ func (ctrl *controller) GracefulStop() {
 // @ID			 get-ping
 // @Description  for testing if server is running
 // @Tags         mediaserver
+// @Security 	 BearerAuth
 // @Produce      plain
 // @Success      200  {string}  string
 // @Router       /ping [get]
 func (ctrl *controller) ping(c *gin.Context) {
-	c.String(http.StatusOK, "pong")
+	if c.GetBool("admin") {
+		c.String(http.StatusOK, "admin pong")
+	} else {
+		c.String(http.StatusOK, "pong")
+	}
+}
+
+// getToken godoc
+// @Summary      lists token contents
+// @ID			 get-token-get
+// @Description  get token content
+// @Tags         mediaserver
+// @Security 	 BearerAuth
+// @Produce      plain
+// @Param 		 X-Vault-Token header string false "token"
+// @Success      200  {object}  token.Token
+// @Failure      400  {object}  HTTPResultMessage
+// @Failure      401  {object}  HTTPResultMessage
+// @Failure      404  {object}  HTTPResultMessage
+// @Failure      500  {object}  HTTPResultMessage
+// @Router       /auth/token/get [get]
+func (ctrl *controller) getToken(ctx *gin.Context) {
+	tokenID := ctx.GetHeader("X-Vault-Token")
+	if tokenID == "" {
+		ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: "missing token"})
+		return
+	}
+	token, err := ctrl.tokenManager.Get(tokenID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, HTTPResultMessage{Message: err.Error()})
+		return
+	}
+	if token == nil {
+		ctx.JSON(http.StatusNotFound, HTTPResultMessage{Message: "token not found"})
+		return
+	}
+	ctx.JSON(http.StatusOK, token)
+}
+
+// getToken godoc
+// @Summary      delete token
+// @ID			 delete-token-delete
+// @Description  delete token content
+// @Tags         mediaserver
+// @Security 	 BearerAuth
+// @Produce      plain
+// @Param 		 X-Vault-Token header string false "token"
+// @Success      200  {bool}  true
+// @Failure      400  {object}  HTTPResultMessage
+// @Failure      401  {object}  HTTPResultMessage
+// @Failure      404  {object}  HTTPResultMessage
+// @Failure      500  {object}  HTTPResultMessage
+// @Router       /auth/token/delete [delete]
+func (ctrl *controller) deleteToken(ctx *gin.Context) {
+	tokenID := ctx.GetHeader("X-Vault-Token")
+	if tokenID == "" {
+		ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: "missing token"})
+		return
+	}
+	if err := ctrl.tokenManager.Delete(tokenID); err != nil {
+		ctx.JSON(http.StatusInternalServerError, HTTPResultMessage{Message: err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, true)
 }
 
 // createToken godoc
@@ -139,14 +282,32 @@ func (ctrl *controller) ping(c *gin.Context) {
 // @ID			 post-create-token
 // @Description  create a new token
 // @Tags         mediaserver
+// @Security 	 BearerAuth
 // @Produce      plain
+// @Param 		 X-Vault-Token header string false "parent token"
 // @Param 		 item       body token.CreateStruct true "new token to create"
 // @Success      200  {string}  string "token-id"
 // @Failure      400  {object}  HTTPResultMessage
 // @Failure      401  {object}  HTTPResultMessage
 // @Failure      404  {object}  HTTPResultMessage
 // @Failure      500  {object}  HTTPResultMessage
-// @Router       /create-token [post]
-func (ctrl *controller) createToken(c *gin.Context) {
-
+// @Router       /auth/token/create [post]
+func (ctrl *controller) createToken(ctx *gin.Context) {
+	isAdmin := ctx.GetBool("admin")
+	createStruct := &token.CreateStruct{}
+	if err := ctx.BindJSON(createStruct); err != nil {
+		ctx.JSON(http.StatusBadRequest, HTTPResultMessage{Message: err.Error()})
+		return
+	}
+	parentToken := ctx.GetHeader("X-Vault-Token")
+	if parentToken == "" && !isAdmin {
+		ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: "only admin can create tokens without parent token"})
+		return
+	}
+	token, err := ctrl.tokenManager.Create(parentToken, createStruct)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, HTTPResultMessage{Message: err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, token)
 }

@@ -13,7 +13,7 @@ import (
 
 type CreateStruct struct {
 	Type      string            `json:"type" example:"client_cert"`
-	Policies  []string          `json:"policies" example:"policy1,policy2"`
+	Policies  []string          `json:"Policies" example:"policy1,policy2"`
 	Meta      map[string]string `json:"meta" example:"key1:value1,key2:value2"`
 	TTL       string            `json:"ttl" example:"1h"`
 	Renewable bool              `json:"renewable" example:"false"`
@@ -33,6 +33,28 @@ type Manager struct {
 	store   Store
 	xor     uint64
 	rndSize int
+}
+
+func (m *Manager) Get(name string) (*Token, error) {
+	data, err := m.store.Get(context.Background(), name)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot get token")
+	}
+	if data == nil {
+		return nil, nil
+	}
+	token := &Token{}
+	if err := token.UnmarshalBinary(data); err != nil {
+		return nil, errors.Wrap(err, "cannot unmarshal token")
+	}
+	return token, nil
+}
+
+func (m *Manager) Delete(name string) error {
+	if err := m.store.Delete(context.Background(), name); err != nil {
+		return errors.Wrapf(err, "cannot delete token %s", name)
+	}
+	return nil
 }
 
 func (m *Manager) Create(parent string, options *CreateStruct) (string, error) {
@@ -57,34 +79,34 @@ func (m *Manager) Create(parent string, options *CreateStruct) (string, error) {
 	if parent != "" {
 		p, err := m.store.Get(context.Background(), parent)
 		if err != nil {
-			return "", errors.Wrapf(err, "cannot get parent token %s", parent)
+			return "", errors.Wrapf(err, "cannot get Parent token %s", parent)
 		}
 		if p == nil {
-			return "", errors.Errorf("parent token %s not found", parent)
+			return "", errors.Errorf("Parent token %s not found", parent)
 		}
 		parentToken = &Token{}
 		if err := parentToken.UnmarshalBinary(p); err != nil {
-			return "", errors.Wrap(err, "cannot unmarshal parent token")
+			return "", errors.Wrap(err, "cannot unmarshal Parent token")
 		}
-		if parentToken.Expiration().Before(time.Now()) {
-			return "", errors.Errorf("parent token %s expired", parent)
+		if parentToken.GetExpiration().Before(time.Now()) {
+			return "", errors.Errorf("Parent token %s expired", parent)
 		}
-		if parentToken.Type() == TokenRoot {
+		if parentToken.GetType() == TokenRoot {
 			if t != TokenParent {
 				return "", errors.Errorf("root token %s cannot have child tokens", parent)
 			}
 		} else {
-			if parentToken.Type() != TokenParent {
-				return "", errors.Errorf("parent token %s is not a parent token", parent)
+			if parentToken.GetType() != TokenParent {
+				return "", errors.Errorf("Parent token %s is not a Parent token", parent)
 			}
 			// Todo: optimize code
 			for _, p := range options.Policies {
-				if !slices.Contains(parentToken.Policies(), p) {
-					return "", errors.Errorf("parent token %s has no policy %s", parent, p)
+				if !slices.Contains(parentToken.GetPolicies(), p) {
+					return "", errors.Errorf("Parent token %s has no policy %s", parent, p)
 				}
 			}
-			if parentToken.Expiration().Before(exp) {
-				return "", errors.Errorf("parent token %s expires before child token", parent)
+			if parentToken.GetExpiration().Before(exp) {
+				return "", errors.Errorf("Parent token %s expires before child token", parent)
 			}
 		}
 	}
@@ -94,7 +116,7 @@ func (m *Manager) Create(parent string, options *CreateStruct) (string, error) {
 	if _, err := rand.Read(rndData); err != nil {
 		return "", errors.Wrap(err, "cannot generate random data")
 	}
-	name := fmt.Sprintf("%s.%d.%s", TypePrefix[t], uint64(now.UnixNano())^m.xor, hex.EncodeToString(rndData))
+	name := fmt.Sprintf("%s.%x.%s", TypePrefix[t], uint64(now.UnixNano())^m.xor, hex.EncodeToString(rndData))
 	token := NewToken(t, now.Add(ttl), options.Policies)
 	tokenBin, err := token.MarshalBinary()
 	if err != nil {

@@ -19,8 +19,11 @@ type BadgerStoreConfig struct {
 
 type MiniVaultConfig struct {
 	LocalAddr    string                 `toml:"localaddr"`
+	AdminAddr    config.EnvString       `toml:"adminaddr"`
+	AdminBearer  config.EnvString       `toml:"adminbearer"`
 	ExternalAddr string                 `toml:"externaladdr"`
 	WebTLS       loaderConfig.TLSConfig `toml:"webtls"`
+	AdminTLS     loaderConfig.TLSConfig `toml:"admintls"`
 	PolicyFile   string                 `toml:"policyfile"`
 	TokenXOR     uint64                 `toml:"tokenxor"`
 	RndSize      int                    `toml:"rndsize"`

@@ -11,20 +11,20 @@ func (t *Token) MarshalBinary() ([]byte, error) {
 	// type
 	size := bstd.SizeUInt16()
 
-	// expiration
-	exp, err := t.expiration.MarshalBinary()
+	// Expiration
+	exp, err := t.Expiration.MarshalBinary()
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot marshal expiration")
+		return nil, errors.Wrap(err, "cannot marshal Expiration")
 	}
-	eSize, err := bstd.SizeByteSlice(exp) // expiration
+	eSize, err := bstd.SizeByteSlice(exp) // Expiration
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot marshal expiration")
+		return nil, errors.Wrap(err, "cannot marshal Expiration")
 	}
 	size += eSize
 
 	// Policies
 	size += bstd.SizeUInt16()      // length Policies
-	for _, u := range t.policies { // Policies
+	for _, u := range t.Policies { // Policies
 		s, err := bstd.SizeString(u)
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot marshal %s", u)
@@ -33,15 +33,15 @@ func (t *Token) MarshalBinary() ([]byte, error) {
 	}
 
 	// Parent
-	s, err := bstd.SizeString(t.parent) // parent
+	s, err := bstd.SizeString(t.Parent) // Parent
 	if err != nil {
-		return nil, errors.Wrapf(err, "cannot marshal %s", t.parent)
+		return nil, errors.Wrapf(err, "cannot marshal %s", t.Parent)
 	}
 	size += s
 
 	// Metadata
-	size += bstd.SizeUInt16() // length metadata
-	for key, val := range t.metadata {
+	size += bstd.SizeUInt16() // length Metadata
+	for key, val := range t.Metadata {
 		s, err := bstd.SizeString(key)
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot marshal %s", key)
@@ -57,31 +57,31 @@ func (t *Token) MarshalBinary() ([]byte, error) {
 	n, buf := benc.Marshal(size)
 
 	// Type
-	n = bstd.MarshalUInt16(n, buf, uint16(t.t))
+	n = bstd.MarshalUInt16(n, buf, uint16(t.T))
 
 	// Expiration
 	n, err = bstd.MarshalByteSlice(n, buf, exp)
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot marshal expiration")
+		return nil, errors.Wrap(err, "cannot marshal Expiration")
 	}
 
 	// Policies
-	n = bstd.MarshalUInt16(n, buf, uint16(len(t.policies)))
-	for _, u := range t.policies {
+	n = bstd.MarshalUInt16(n, buf, uint16(len(t.Policies)))
+	for _, u := range t.Policies {
 		if n, err = bstd.MarshalString(n, buf, u); err != nil {
 			return nil, errors.Wrapf(err, "cannot marshal %s", u)
 		}
 	}
 
 	// Parent
-	n, err = bstd.MarshalString(n, buf, t.parent)
+	n, err = bstd.MarshalString(n, buf, t.Parent)
 	if err != nil {
-		return nil, errors.Wrapf(err, "cannot marshal %s", t.parent)
+		return nil, errors.Wrapf(err, "cannot marshal %s", t.Parent)
 	}
 
 	// Metadata
-	n = bstd.MarshalUInt16(n, buf, uint16(len(t.metadata)))
-	for key, val := range t.metadata {
+	n = bstd.MarshalUInt16(n, buf, uint16(len(t.Metadata)))
+	for key, val := range t.Metadata {
 		if n, err = bstd.MarshalString(n, buf, key); err != nil {
 			return nil, errors.Wrapf(err, "cannot marshal %s", key)
 		}
@@ -99,23 +99,23 @@ func (t *Token) MarshalBinary() ([]byte, error) {
 func (t *Token) UnmarshalBinary(data []byte) error {
 	var err error
 	var n int
-	t.policies = []string{}
-	t.metadata = map[string]string{}
+	t.Policies = []string{}
+	t.Metadata = map[string]string{}
 
 	// Type
 	var num uint16
 	if n, num, err = bstd.UnmarshalUInt16(n, data); err != nil {
 		return errors.Wrap(err, "cannot unmarshal type")
 	}
-	t.t = Type(num)
+	t.T = Type(num)
 
 	// Expiration
 	var exp []byte
 	if n, exp, err = bstd.UnmarshalByteSlice(n, data); err != nil {
-		return errors.Wrap(err, "cannot unmarshal expiration")
+		return errors.Wrap(err, "cannot unmarshal Expiration")
 	}
-	if err := t.expiration.UnmarshalBinary(exp); err != nil {
-		return errors.Wrap(err, "cannot unmarshal binary expiration")
+	if err := t.Expiration.UnmarshalBinary(exp); err != nil {
+		return errors.Wrap(err, "cannot unmarshal binary Expiration")
 	}
 
 	// Policies
@@ -127,17 +127,17 @@ func (t *Token) UnmarshalBinary(data []byte) error {
 		if n, s, err = bstd.UnmarshalString(n, data); err != nil {
 			return errors.Wrap(err, "cannot unmarshal URI")
 		}
-		t.policies = append(t.policies, s)
+		t.Policies = append(t.Policies, s)
 	}
 
 	// Parent
-	if n, t.parent, err = bstd.UnmarshalString(n, data); err != nil {
-		return errors.Wrap(err, "cannot unmarshal parent")
+	if n, t.Parent, err = bstd.UnmarshalString(n, data); err != nil {
+		return errors.Wrap(err, "cannot unmarshal Parent")
 	}
 
 	// Metadata
 	if n, num, err = bstd.UnmarshalUInt16(n, data); err != nil {
-		return errors.Wrap(err, "cannot unmarshal length metadata")
+		return errors.Wrap(err, "cannot unmarshal length Metadata")
 	}
 	for i := 0; i < int(num); i++ {
 		var key, val string
@@ -147,7 +147,7 @@ func (t *Token) UnmarshalBinary(data []byte) error {
 		if n, val, err = bstd.UnmarshalString(n, data); err != nil {
 			return errors.Wrap(err, "cannot unmarshal value")
 		}
-		t.metadata[key] = val
+		t.Metadata[key] = val
 	}
 
 	if err := benc.VerifyUnmarshal(n, data); err != nil {

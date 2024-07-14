@@ -117,10 +117,19 @@ func main() {
 	}
 	defer webLoader.Close()
 
+	adminTLSConfig, adminLoader, err := loader.CreateServerLoader(false, &conf.AdminTLS, nil, logger)
+	if err != nil {
+		logger.Panic().Err(err).Msg("cannot create server loader")
+	}
+	defer adminLoader.Close()
+
 	ctrl, err := rest.NewMainController(
 		conf.LocalAddr,
 		conf.ExternalAddr,
+		string(conf.AdminAddr),
+		string(conf.AdminBearer),
 		webTLSConfig,
+		adminTLSConfig,
 		tokenManager,
 		policyManager,
 		logger)

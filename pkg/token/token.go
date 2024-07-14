@@ -16,7 +16,7 @@ const (
 
 var TypeString map[Type]string = map[Type]string{
 	TokenRoot:             "root",
-	TokenParent:           "parent",
+	TokenParent:           "Parent",
 	TokenServerCert:       "server_cert",
 	TokenClientCert:       "client_cert",
 	TokenClientServerCert: "client_server_cert",
@@ -34,37 +34,37 @@ var StringType map[string]Type = map[string]Type{
 	"server_cert":        TokenServerCert,
 	"client_cert":        TokenClientCert,
 	"client_server_cert": TokenClientServerCert,
-	"parent":             TokenParent,
+	"Parent":             TokenParent,
 }
 
 func NewToken(t Type, expiration time.Time, policies []string) *Token {
-	return &Token{t: t, expiration: expiration, policies: policies}
+	return &Token{T: t, Expiration: expiration, Policies: policies}
 }
 
 type Token struct {
-	t          Type
-	expiration time.Time
-	policies   []string
-	parent     string
-	metadata   map[string]string
+	T          Type
+	Expiration time.Time
+	Policies   []string
+	Parent     string
+	Metadata   map[string]string
 }
 
-func (t *Token) Type() Type {
-	return t.t
+func (t *Token) GetType() Type {
+	return t.T
 }
 
-func (t *Token) Expiration() time.Time {
-	return t.expiration
+func (t *Token) GetExpiration() time.Time {
+	return t.Expiration
 }
 
-func (t *Token) Policies() []string {
-	return t.policies
+func (t *Token) GetPolicies() []string {
+	return t.Policies
 }
 
-func (t *Token) Parent() string {
-	return t.parent
+func (t *Token) GetParent() string {
+	return t.Parent
 }
 
-func (t *Token) Metadata() map[string]string {
-	return t.metadata
+func (t *Token) GetMetadata() map[string]string {
+	return t.Metadata
 }
