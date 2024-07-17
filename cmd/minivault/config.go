@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/x509/pkix"
 	"emperror.dev/errors"
 	"github.com/BurntSushi/toml"
 	loaderConfig "github.com/je4/trustutil/v2/pkg/config"
@@ -22,6 +23,10 @@ type MiniVaultConfig struct {
 	AdminAddr    config.EnvString       `toml:"adminaddr"`
 	AdminBearer  config.EnvString       `toml:"adminbearer"`
 	ExternalAddr string                 `toml:"externaladdr"`
+	CA           config.EnvString       `toml:"ca"`
+	CAKey        config.EnvString       `toml:"cakey"`
+	CAPassword   config.EnvString       `toml:"capassword"`
+	CertName     *pkix.Name             `toml:"certname"`
 	WebTLS       loaderConfig.TLSConfig `toml:"webtls"`
 	AdminTLS     loaderConfig.TLSConfig `toml:"admintls"`
 	PolicyFile   string                 `toml:"policyfile"`

@@ -34,11 +34,11 @@ var StringType map[string]Type = map[string]Type{
 	"server_cert":        TokenServerCert,
 	"client_cert":        TokenClientCert,
 	"client_server_cert": TokenClientServerCert,
-	"Parent":             TokenParent,
+	"parent":             TokenParent,
 }
 
-func NewToken(t Type, expiration time.Time, policies []string) *Token {
-	return &Token{T: t, Expiration: expiration, Policies: policies}
+func NewToken(t Type, expiration time.Time, policies []string, meta map[string]string) *Token {
+	return &Token{T: t, Expiration: expiration, Policies: policies, Metadata: meta}
 }
 
 type Token struct {

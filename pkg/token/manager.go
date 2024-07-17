@@ -77,6 +77,9 @@ func (m *Manager) Create(parent string, options *CreateStruct) (string, error) {
 
 	var parentToken *Token
 	if parent != "" {
+		if t == TokenParent || t == TokenRoot {
+			return "", errors.Errorf("parent and root token cannot have parent")
+		}
 		p, err := m.store.Get(context.Background(), parent)
 		if err != nil {
 			return "", errors.Wrapf(err, "cannot get Parent token %s", parent)
@@ -117,7 +120,7 @@ func (m *Manager) Create(parent string, options *CreateStruct) (string, error) {
 		return "", errors.Wrap(err, "cannot generate random data")
 	}
 	name := fmt.Sprintf("%s.%x.%s", TypePrefix[t], uint64(now.UnixNano())^m.xor, hex.EncodeToString(rndData))
-	token := NewToken(t, now.Add(ttl), options.Policies)
+	token := NewToken(t, now.Add(ttl), options.Policies, options.Meta)
 	tokenBin, err := token.MarshalBinary()
 	if err != nil {
 		return "", errors.Wrap(err, "cannot marshal token")

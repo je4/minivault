@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/je4/minivault/v2/pkg/cert"
 	"github.com/je4/minivault/v2/pkg/policy"
 	"github.com/je4/minivault/v2/pkg/rest/docs"
 	"github.com/je4/minivault/v2/pkg/token"
@@ -37,8 +38,7 @@ const BASEPATH = "/api/v1"
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
-
-func NewMainController(addr, extAddr, adminAddr, adminBearer string, tlsConfig, adminTLSConfig *tls.Config, tokenManager *token.Manager, policyManager *policy.Manager, logger zLogger.ZLogger) (*controller, error) {
+func NewMainController(addr, extAddr, adminAddr, adminBearer string, tlsConfig, adminTLSConfig *tls.Config, tokenManager *token.Manager, policyManager *policy.Manager, certManager *cert.Manager, logger zLogger.ZLogger) (*controller, error) {
 	u, err := url.Parse(extAddr)
 	if err != nil {
 		return nil, errors.Wrapf(err, "invalid external address '%s'", extAddr)
@@ -63,6 +63,7 @@ func NewMainController(addr, extAddr, adminAddr, adminBearer string, tlsConfig, 
 		subpath:       subpath,
 		tokenManager:  tokenManager,
 		policyManager: policyManager,
+		certManager:   certManager,
 		logger:        &_logger,
 	}
 	if err := c.Init(tlsConfig, adminTLSConfig); err != nil {
@@ -83,6 +84,7 @@ type controller struct {
 	tokenManager  *token.Manager
 	policyManager *policy.Manager
 	logger        zLogger.ZLogger
+	certManager   *cert.Manager
 }
 
 func (ctrl *controller) Init(tlsConfig, adminTLSConfig *tls.Config) error {
@@ -115,6 +117,7 @@ func (ctrl *controller) Init(tlsConfig, adminTLSConfig *tls.Config) error {
 
 	v1.GET("/ping", ctrl.ping)
 	v1.POST("/auth/token/create", ctrl.createToken)
+	v1.POST("/cert/create", ctrl.createCert)
 	v1.GET("/auth/token/get", ctrl.getToken)
 	v1.DELETE("/auth/token/delete", ctrl.deleteToken)
 	ctrl.router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -310,4 +313,24 @@ func (ctrl *controller) createToken(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, token)
+}
+
+// createCert godoc
+// @Summary      create a new certificate
+// @ID			 post-create-cert
+// @Description  create a new certificate
+// @Tags         mediaserver
+// @Security 	 BearerAuth
+// @Produce      plain
+// @Param 		 X-Vault-Token header string false "token"
+// @Param 		 item       body cert.CreateStruct true "new certificate to create"
+// @Success      200  {object}  CertResultMessage
+// @Failure      400  {object}  HTTPResultMessage
+// @Failure      401  {object}  HTTPResultMessage
+// @Failure      404  {object}  HTTPResultMessage
+// @Failure      500  {object}  HTTPResultMessage
+// @Router       /cert/create [post]
+func (ctrl *controller) createCert(ctx *gin.Context) {
+	isAdmin := ctx.GetBool("admin")
+
 }

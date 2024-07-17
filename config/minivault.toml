@@ -9,6 +9,14 @@ rndsize = 8
 
 tokenstore = "badger"
 
+[certname]
+Organization = ["University Library Basel"]
+Country = ["CH"]
+Province = ["Basel City"]
+Locality = ["Basel"]
+StreetAddress = ["Schönbeinstrasse 18-20"]
+PostalCode = ["4056"]
+
 [badgerstore]
 folder = "/tmp/minivault"
 hexkey = ""

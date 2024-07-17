@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"github.com/je4/minivault/v2/config"
 	"github.com/je4/minivault/v2/pkg/badgerStore"
+	"github.com/je4/minivault/v2/pkg/localca"
 	"github.com/je4/minivault/v2/pkg/policy"
 	"github.com/je4/minivault/v2/pkg/rest"
 	"github.com/je4/minivault/v2/pkg/token"
+	"github.com/je4/trustutil/v2/pkg/certutil"
 	"github.com/je4/trustutil/v2/pkg/loader"
 	"github.com/je4/utils/v2/pkg/zLogger"
 	ublogger "gitlab.switch.ch/ub-unibas/go-ublogger"
@@ -111,6 +113,13 @@ func main() {
 		logger.Panic().Err(err).Msg("cannot start policy manager")
 	}
 
+	ca, key, err := certutil.CertificateKeyFromPEM([]byte(conf.CA), []byte(conf.CAKey), []byte(conf.CAPassword))
+	if err != nil {
+		logger.Panic().Err(err).Msg("cannot decode ca")
+	}
+
+	certManager := localca.NewManager(ca, key, conf.CertName, certutil.DefaultKeyType, logger)
+
 	webTLSConfig, webLoader, err := loader.CreateServerLoader(false, &conf.WebTLS, nil, logger)
 	if err != nil {
 		logger.Panic().Err(err).Msg("cannot create server loader")
@@ -132,6 +141,7 @@ func main() {
 		adminTLSConfig,
 		tokenManager,
 		policyManager,
+		certManager,
 		logger)
 	if err != nil {
 		logger.Fatal().Msgf("cannot create controller: %v", err)
