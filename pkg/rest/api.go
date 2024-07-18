@@ -17,8 +17,10 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"sync"
+	"time"
 )
 
 const BASEPATH = "/api/v1"
@@ -38,7 +40,7 @@ const BASEPATH = "/api/v1"
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
-func NewMainController(addr, extAddr, adminAddr, adminBearer string, tlsConfig, adminTLSConfig *tls.Config, tokenManager *token.Manager, policyManager *policy.Manager, certManager *cert.Manager, logger zLogger.ZLogger) (*controller, error) {
+func NewMainController(addr, extAddr, adminAddr, adminBearer string, tlsConfig, adminTLSConfig *tls.Config, tokenManager *token.Manager, policyManager *policy.Manager, certManager cert.Manager, logger zLogger.ZLogger) (*controller, error) {
 	u, err := url.Parse(extAddr)
 	if err != nil {
 		return nil, errors.Wrapf(err, "invalid external address '%s'", extAddr)
@@ -84,7 +86,7 @@ type controller struct {
 	tokenManager  *token.Manager
 	policyManager *policy.Manager
 	logger        zLogger.ZLogger
-	certManager   *cert.Manager
+	certManager   cert.Manager
 }
 
 func (ctrl *controller) Init(tlsConfig, adminTLSConfig *tls.Config) error {
@@ -315,6 +317,12 @@ func (ctrl *controller) createToken(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, token)
 }
 
+type CertResultMessage struct {
+	Cert string `json:"cert"`
+	Key  string `json:"key"`
+	CA   string `json:"ca"`
+}
+
 // createCert godoc
 // @Summary      create a new certificate
 // @ID			 post-create-cert
@@ -332,5 +340,54 @@ func (ctrl *controller) createToken(ctx *gin.Context) {
 // @Router       /cert/create [post]
 func (ctrl *controller) createCert(ctx *gin.Context) {
 	isAdmin := ctx.GetBool("admin")
-
+	createStruct := &cert.CreateStruct{}
+	if err := ctx.BindJSON(createStruct); err != nil {
+		ctx.JSON(http.StatusBadRequest, HTTPResultMessage{Message: err.Error()})
+		return
+	}
+	tokenID := ctx.GetHeader("X-Vault-Token")
+	if tokenID == "" && !isAdmin {
+		ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: "only admin can create certificates without token"})
+		return
+	}
+	tokenData, err := ctrl.tokenManager.Get(tokenID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, HTTPResultMessage{Message: err.Error()})
+		return
+	}
+	if tokenData == nil {
+		ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: "token not found"})
+		return
+	}
+	certType, ok := token.StringType[createStruct.Type]
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, HTTPResultMessage{Message: fmt.Sprintf("unknown certificate type %s", createStruct.Type)})
+		return
+	}
+	if !slices.Contains([]token.Type{token.TokenServerCert, token.TokenClientCert, token.TokenClientServerCert}, certType) {
+		ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: fmt.Sprintf("type %s not allowed to create certificate", certType)})
+		return
+	}
+	if certType != tokenData.GetType() {
+		ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: fmt.Sprintf("token type %s does not match certificate type %s", tokenData.GetType(), certType)})
+		return
+	}
+	ttl, err := time.ParseDuration(createStruct.TTL)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, HTTPResultMessage{Message: fmt.Sprintf("cannot parse duration %s: %s", createStruct.TTL, err.Error())})
+		return
+	}
+	cert, key, err := ctrl.certManager.Create(
+		slices.Contains([]token.Type{token.TokenClientServerCert, token.TokenClientCert}, certType),
+		slices.Contains([]token.Type{token.TokenClientServerCert, token.TokenServerCert}, certType),
+		createStruct.URIs,
+		[]net.IP{},
+		createStruct.DNSNames,
+		ttl,
+	)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, HTTPResultMessage{Message: fmt.Sprintf("cannot create certificate: %s", err.Error())})
+		return
+	}
+	ctx.JSON(http.StatusOK, CertResultMessage{Cert: string(cert), Key: string(key)})
 }

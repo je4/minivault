@@ -92,12 +92,12 @@ func main() {
 		if conf.BadgerStore.HexKey != "" {
 			key, err = hex.DecodeString(string(conf.BadgerStore.HexKey))
 			if err != nil {
-				logger.Panic().Msgf("cannot decode hex key '%s': %v", conf.BadgerStore.HexKey, err)
+				logger.Fatal().Msgf("cannot decode hex key '%s': %v", conf.BadgerStore.HexKey, err)
 			}
 		}
 		tokenStore, err = badgerStore.NewBadgerStore(conf.BadgerStore.Folder, key, conf.BadgerStore.CacheSize)
 		if err != nil {
-			logger.Panic().Msgf("cannot create badger store: %v", err)
+			logger.Fatal().Msgf("cannot create badger store: %v", err)
 		}
 	default:
 		logger.Panic().Msgf("unknown token store '%s'", conf.TokenStore)
@@ -115,20 +115,20 @@ func main() {
 
 	ca, key, err := certutil.CertificateKeyFromPEM([]byte(conf.CA), []byte(conf.CAKey), []byte(conf.CAPassword))
 	if err != nil {
-		logger.Panic().Err(err).Msg("cannot decode ca")
+		logger.Fatal().Err(err).Msg("cannot decode ca")
 	}
 
 	certManager := localca.NewManager(ca, key, conf.CertName, certutil.DefaultKeyType, logger)
 
 	webTLSConfig, webLoader, err := loader.CreateServerLoader(false, &conf.WebTLS, nil, logger)
 	if err != nil {
-		logger.Panic().Err(err).Msg("cannot create server loader")
+		logger.Fatal().Err(err).Msg("cannot create server loader")
 	}
 	defer webLoader.Close()
 
 	adminTLSConfig, adminLoader, err := loader.CreateServerLoader(false, &conf.AdminTLS, nil, logger)
 	if err != nil {
-		logger.Panic().Err(err).Msg("cannot create server loader")
+		logger.Fatal().Err(err).Msg("cannot create server loader")
 	}
 	defer adminLoader.Close()
 

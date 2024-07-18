@@ -31,11 +31,15 @@ func (b *BadgerStore) Close() error {
 	return errors.WithStack(b.db.Close())
 }
 
+// returns nil, nil if not found
 func (b *BadgerStore) Get(ctx context.Context, tokenID string) ([]byte, error) {
 	var t []byte
 	if err := b.db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte(tokenID))
 		if err != nil {
+			if errors.Is(err, badger.ErrKeyNotFound) {
+				return nil
+			}
 			return errors.Wrapf(err, "cannot get token %s", tokenID)
 		}
 		if err := item.Value(func(val []byte) error {

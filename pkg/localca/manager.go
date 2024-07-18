@@ -28,42 +28,10 @@ type Manager struct {
 	keyType certutil.KeyType
 }
 
-func (m *Manager) GetClient(uris []string, ttl time.Duration) (cert []byte, key []byte, err error) {
+func (m *Manager) Create(client, server bool, uris []string, ips []net.IP, dns []string, ttl time.Duration) (cert []byte, key []byte, err error) {
 	return certutil.CreateCertificate(
-		true,
-		false,
-		ttl,
-		m.ca,
-		m.caKey,
-		[]net.IP{},
-		[]string{},
-		[]string{},
-		uris,
-		m.name,
-		m.keyType,
-	)
-}
-
-func (m *Manager) GetServer(ips []net.IP, dns []string, ttl time.Duration) (cert []byte, key []byte, err error) {
-	return certutil.CreateCertificate(
-		false,
-		true,
-		ttl,
-		m.ca,
-		m.caKey,
-		ips,
-		dns,
-		[]string{},
-		[]string{},
-		m.name,
-		m.keyType,
-	)
-}
-
-func (m *Manager) GetHybrid(uris []string, ips []net.IP, dns []string, ttl time.Duration) (cert []byte, key []byte, err error) {
-	return certutil.CreateCertificate(
-		true,
-		true,
+		client,
+		server,
 		ttl,
 		m.ca,
 		m.caKey,
