@@ -1,0 +1,503 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "MiniVault API for managing tokens and certificates",
+        "title": "MiniVault API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "Jürgen Enge",
+            "url": "https://ub.unibas.ch",
+            "email": "juergen.enge@unibas.ch"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
+    },
+    "paths": {
+        "/auth/token/create": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "create a new token",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "mediaserver"
+                ],
+                "summary": "does pong",
+                "operationId": "post-create-token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "parent token",
+                        "name": "X-Vault-Token",
+                        "in": "header"
+                    },
+                    {
+                        "description": "new token to create",
+                        "name": "item",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/token.CreateStruct"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "token-id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/token/delete": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "delete token content",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "mediaserver"
+                ],
+                "summary": "delete token",
+                "operationId": "delete-token-delete",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token",
+                        "name": "X-Vault-Token",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "bool"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/token/get": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "get token content",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "mediaserver"
+                ],
+                "summary": "lists token contents",
+                "operationId": "get-token-get",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token",
+                        "name": "X-Vault-Token",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_je4_minivault_v2_pkg_token.Token"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/cert/create": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "create a new certificate",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "mediaserver"
+                ],
+                "summary": "create a new certificate",
+                "operationId": "post-create-cert",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token",
+                        "name": "X-Vault-Token",
+                        "in": "header"
+                    },
+                    {
+                        "description": "new certificate to create",
+                        "name": "item",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/cert.CreateStruct"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/rest.CertResultMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/cert/getca": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "get CA certificate",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "mediaserver"
+                ],
+                "summary": "get CA certificate",
+                "operationId": "get-get-ca",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token",
+                        "name": "X-Vault-Token",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/rest.CertResultMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/ping": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "for testing if server is running",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "mediaserver"
+                ],
+                "summary": "does pong",
+                "operationId": "get-ping",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "cert.CreateStruct": {
+            "type": "object",
+            "properties": {
+                "dnnames": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "dns1",
+                        "dns2"
+                    ]
+                },
+                "ttl": {
+                    "type": "string",
+                    "example": "1h"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "client_cert"
+                },
+                "uris": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "uri1",
+                        "uri2"
+                    ]
+                }
+            }
+        },
+        "github_com_je4_minivault_v2_pkg_token.Token": {
+            "type": "object",
+            "properties": {
+                "expiration": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "parent": {
+                    "type": "string"
+                },
+                "policies": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "t": {
+                    "$ref": "#/definitions/token.Type"
+                }
+            }
+        },
+        "rest.CertResultMessage": {
+            "type": "object",
+            "properties": {
+                "ca": {
+                    "type": "string"
+                },
+                "cert": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                }
+            }
+        },
+        "rest.HTTPResultMessage": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 400
+                },
+                "message": {
+                    "type": "string",
+                    "example": "status bad request"
+                }
+            }
+        },
+        "token.CreateStruct": {
+            "type": "object",
+            "properties": {
+                "Policies": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "policy1",
+                        "policy2"
+                    ]
+                },
+                "meta": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "example": {
+                        "key1": "value1",
+                        "key2": "value2"
+                    }
+                },
+                "renewable": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "ttl": {
+                    "type": "string",
+                    "example": "1h"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "client_cert"
+                }
+            }
+        },
+        "token.Type": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2,
+                3,
+                4
+            ],
+            "x-enum-varnames": [
+                "TokenRoot",
+                "TokenParent",
+                "TokenServerCert",
+                "TokenClientCert",
+                "TokenClientServerCert"
+            ]
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

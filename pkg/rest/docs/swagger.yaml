@@ -1,0 +1,331 @@
+definitions:
+  cert.CreateStruct:
+    properties:
+      dnnames:
+        example:
+        - dns1
+        - dns2
+        items:
+          type: string
+        type: array
+      ttl:
+        example: 1h
+        type: string
+      type:
+        example: client_cert
+        type: string
+      uris:
+        example:
+        - uri1
+        - uri2
+        items:
+          type: string
+        type: array
+    type: object
+  github_com_je4_minivault_v2_pkg_token.Token:
+    properties:
+      expiration:
+        type: string
+      metadata:
+        additionalProperties:
+          type: string
+        type: object
+      parent:
+        type: string
+      policies:
+        items:
+          type: string
+        type: array
+      t:
+        $ref: '#/definitions/token.Type'
+    type: object
+  rest.CertResultMessage:
+    properties:
+      ca:
+        type: string
+      cert:
+        type: string
+      key:
+        type: string
+    type: object
+  rest.HTTPResultMessage:
+    properties:
+      code:
+        example: 400
+        type: integer
+      message:
+        example: status bad request
+        type: string
+    type: object
+  token.CreateStruct:
+    properties:
+      Policies:
+        example:
+        - policy1
+        - policy2
+        items:
+          type: string
+        type: array
+      meta:
+        additionalProperties:
+          type: string
+        example:
+          key1: value1
+          key2: value2
+        type: object
+      renewable:
+        example: false
+        type: boolean
+      ttl:
+        example: 1h
+        type: string
+      type:
+        example: client_cert
+        type: string
+    type: object
+  token.Type:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    type: integer
+    x-enum-varnames:
+    - TokenRoot
+    - TokenParent
+    - TokenServerCert
+    - TokenClientCert
+    - TokenClientServerCert
+info:
+  contact:
+    email: juergen.enge@unibas.ch
+    name: Jürgen Enge
+    url: https://ub.unibas.ch
+  description: MiniVault API for managing tokens and certificates
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: MiniVault API
+  version: "1.0"
+paths:
+  /auth/token/create:
+    post:
+      description: create a new token
+      operationId: post-create-token
+      parameters:
+      - description: parent token
+        in: header
+        name: X-Vault-Token
+        type: string
+      - description: new token to create
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/token.CreateStruct'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: token-id
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+      security:
+      - BearerAuth: []
+      summary: does pong
+      tags:
+      - mediaserver
+  /auth/token/delete:
+    delete:
+      description: delete token content
+      operationId: delete-token-delete
+      parameters:
+      - description: token
+        in: header
+        name: X-Vault-Token
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: bool
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+      security:
+      - BearerAuth: []
+      summary: delete token
+      tags:
+      - mediaserver
+  /auth/token/get:
+    get:
+      description: get token content
+      operationId: get-token-get
+      parameters:
+      - description: token
+        in: header
+        name: X-Vault-Token
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_je4_minivault_v2_pkg_token.Token'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+      security:
+      - BearerAuth: []
+      summary: lists token contents
+      tags:
+      - mediaserver
+  /cert/create:
+    post:
+      description: create a new certificate
+      operationId: post-create-cert
+      parameters:
+      - description: token
+        in: header
+        name: X-Vault-Token
+        type: string
+      - description: new certificate to create
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/cert.CreateStruct'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.CertResultMessage'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+      security:
+      - BearerAuth: []
+      summary: create a new certificate
+      tags:
+      - mediaserver
+  /cert/getca:
+    get:
+      description: get CA certificate
+      operationId: get-get-ca
+      parameters:
+      - description: token
+        in: header
+        name: X-Vault-Token
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.CertResultMessage'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+      security:
+      - BearerAuth: []
+      summary: get CA certificate
+      tags:
+      - mediaserver
+  /ping:
+    get:
+      description: for testing if server is running
+      operationId: get-ping
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: does pong
+      tags:
+      - mediaserver
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
