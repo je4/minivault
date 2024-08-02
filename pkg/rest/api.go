@@ -366,11 +366,11 @@ func (ctrl *controller) createCert(ctx *gin.Context) {
 		return
 	}
 	if !slices.Contains([]token.Type{token.TokenServerCert, token.TokenClientCert, token.TokenClientServerCert}, certType) {
-		ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: fmt.Sprintf("type %s not allowed to create certificate", certType)})
+		ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: fmt.Sprintf("type %s not allowed to create certificate", createStruct.Type)})
 		return
 	}
 	if certType != tokenData.GetType() {
-		ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: fmt.Sprintf("token type %s does not match certificate type %s", tokenData.GetType(), certType)})
+		ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: fmt.Sprintf("token type %s does not match certificate type %s", tokenData.GetType(), createStruct.Type)})
 		return
 	}
 	ttl, err := time.ParseDuration(createStruct.TTL)
