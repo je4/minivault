@@ -80,3 +80,10 @@ func (m *Manager) load() error {
 	}
 	return nil
 }
+
+func (m *Manager) Get(id string) (*Policy, bool) {
+	m.RLock()
+	defer m.RUnlock()
+	p, ok := m.policies[id]
+	return p, ok
+}

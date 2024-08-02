@@ -120,6 +120,7 @@ func (ctrl *controller) Init(tlsConfig, adminTLSConfig *tls.Config) error {
 	v1.GET("/ping", ctrl.ping)
 	v1.POST("/auth/token/create", ctrl.createToken)
 	v1.POST("/cert/create", ctrl.createCert)
+	v1.GET("/cert/ca/pem", ctrl.getCA)
 	v1.GET("/auth/token/get", ctrl.getToken)
 	v1.DELETE("/auth/token/delete", ctrl.deleteToken)
 	ctrl.router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -318,9 +319,9 @@ func (ctrl *controller) createToken(ctx *gin.Context) {
 }
 
 type CertResultMessage struct {
-	Cert string `json:"cert"`
-	Key  string `json:"key"`
-	CA   string `json:"ca"`
+	Cert string `json:"cert,omitempty"`
+	Key  string `json:"key,omitempty"`
+	CA   string `json:"ca,omitempty"`
 }
 
 // createCert godoc
@@ -377,6 +378,27 @@ func (ctrl *controller) createCert(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, HTTPResultMessage{Message: fmt.Sprintf("cannot parse duration %s: %s", createStruct.TTL, err.Error())})
 		return
 	}
+	if tokenData.Expiration.After(time.Now().Add(ttl)) {
+		ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: "token expires before certificate"})
+		return
+	}
+	// check dns and uri values with token
+	for _, policyID := range tokenData.GetPolicies() {
+		if policy, ok := ctrl.policyManager.Get(policyID); ok {
+			for _, dnsName := range createStruct.DNSNames {
+				if !slices.Contains(policy.DNS, dnsName) {
+					ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: fmt.Sprintf("dns name %s not allowed", dnsName)})
+					return
+				}
+			}
+			for _, uri := range createStruct.URIs {
+				if !slices.Contains(policy.URIs, uri) {
+					ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: fmt.Sprintf("uri %s not allowed", uri)})
+					return
+				}
+			}
+		}
+	}
 	cert, key, err := ctrl.certManager.Create(
 		slices.Contains([]token.Type{token.TokenClientServerCert, token.TokenClientCert}, certType),
 		slices.Contains([]token.Type{token.TokenClientServerCert, token.TokenServerCert}, certType),
@@ -389,5 +411,23 @@ func (ctrl *controller) createCert(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, HTTPResultMessage{Message: fmt.Sprintf("cannot create certificate: %s", err.Error())})
 		return
 	}
-	ctx.JSON(http.StatusOK, CertResultMessage{Cert: string(cert), Key: string(key)})
+	ctx.JSON(http.StatusOK, CertResultMessage{Cert: string(cert), Key: string(key), CA: ctrl.certManager.GetCAPEM()})
+}
+
+// getCA godoc
+// @Summary      get CA certificate
+// @ID			 get-get-ca
+// @Description  get CA certificate
+// @Tags         mediaserver
+// @Security 	 BearerAuth
+// @Produce      plain
+// @Param 		 X-Vault-Token header string false "token"
+// @Success      200  {object}  CertResultMessage
+// @Failure      400  {object}  HTTPResultMessage
+// @Failure      401  {object}  HTTPResultMessage
+// @Failure      404  {object}  HTTPResultMessage
+// @Failure      500  {object}  HTTPResultMessage
+// @Router       /cert/getca [get]
+func (ctrl *controller) getCA(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, CertResultMessage{CA: ctrl.certManager.GetCAPEM()})
 }

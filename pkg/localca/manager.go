@@ -3,6 +3,7 @@ package localca
 import (
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/pem"
 	"github.com/je4/minivault/v2/pkg/cert"
 	"github.com/je4/trustutil/v2/pkg/certutil"
 	"github.com/je4/utils/v2/pkg/zLogger"
@@ -13,6 +14,7 @@ import (
 func NewManager(ca *x509.Certificate, cakey any, name *pkix.Name, keyType certutil.KeyType, logger zLogger.ZLogger) *Manager {
 	return &Manager{
 		ca:      ca,
+		caPEM:   string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: ca.Raw})),
 		caKey:   cakey,
 		name:    name,
 		keyType: keyType,
@@ -26,6 +28,11 @@ type Manager struct {
 	name    *pkix.Name
 	logger  zLogger.ZLogger
 	keyType certutil.KeyType
+	caPEM   string
+}
+
+func (m *Manager) GetCAPEM() string {
+	return m.caPEM
 }
 
 func (m *Manager) Create(client, server bool, uris []string, ips []net.IP, dns []string, ttl time.Duration) (cert []byte, key []byte, err error) {
