@@ -69,7 +69,8 @@ dataset=""
 #dataset="logs-mediaserver"
 [log.stash.tls]
 type="file"
-cert="certs/ub-log.ub.unibas.ch.cert.pem"
-key="certs/ub-log.ub.unibas.ch.key.pem"
 ca=["certs/ca.crt"]
 interval="1h"
+[log.stash.tls.file]
+cert="certs/ub-log.ub.unibas.ch.cert.pem"
+key="certs/ub-log.ub.unibas.ch.key.pem"

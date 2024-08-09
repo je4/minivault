@@ -38,7 +38,7 @@ const docTemplate = `{
                 "tags": [
                     "mediaserver"
                 ],
-                "summary": "does pong",
+                "summary": "creates a new token",
                 "operationId": "post-create-token",
                 "parameters": [
                     {
@@ -399,6 +399,9 @@ const docTemplate = `{
                 "expiration": {
                     "type": "string"
                 },
+                "maxTTL": {
+                    "$ref": "#/definitions/time.Duration"
+                },
                 "metadata": {
                     "type": "object",
                     "additionalProperties": {
@@ -446,6 +449,29 @@ const docTemplate = `{
                 }
             }
         },
+        "time.Duration": {
+            "type": "integer",
+            "enum": [
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                3600000000000
+            ],
+            "x-enum-varnames": [
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour"
+            ]
+        },
         "token.CreateStruct": {
             "type": "object",
             "properties": {
@@ -458,6 +484,10 @@ const docTemplate = `{
                         "policy1",
                         "policy2"
                     ]
+                },
+                "maxttl": {
+                    "type": "string",
+                    "example": "3h"
                 },
                 "meta": {
                     "type": "object",
@@ -475,7 +505,7 @@ const docTemplate = `{
                 },
                 "ttl": {
                     "type": "string",
-                    "example": "1h"
+                    "example": "1000h"
                 },
                 "type": {
                     "type": "string",

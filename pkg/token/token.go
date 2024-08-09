@@ -37,8 +37,8 @@ var StringType map[string]Type = map[string]Type{
 	"parent":             TokenParent,
 }
 
-func NewToken(t Type, expiration time.Time, policies []string, meta map[string]string) *Token {
-	return &Token{T: t, Expiration: expiration, Policies: policies, Metadata: meta}
+func NewToken(t Type, expiration time.Time, maxTTL time.Duration, policies []string, meta map[string]string) *Token {
+	return &Token{T: t, Expiration: expiration, MaxTTL: maxTTL, Policies: policies, Metadata: meta}
 }
 
 type Token struct {
@@ -47,6 +47,7 @@ type Token struct {
 	Policies   []string
 	Parent     string
 	Metadata   map[string]string
+	MaxTTL     time.Duration
 }
 
 func (t *Token) GetType() Type {

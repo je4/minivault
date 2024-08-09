@@ -5,6 +5,7 @@ import (
 	"encoding"
 	"github.com/deneonet/benc"
 	"github.com/deneonet/benc/bstd"
+	"time"
 )
 
 func (t *Token) MarshalBinary() ([]byte, error) {
@@ -21,6 +22,9 @@ func (t *Token) MarshalBinary() ([]byte, error) {
 		return nil, errors.Wrap(err, "cannot marshal Expiration")
 	}
 	size += eSize
+
+	// MaxTTL
+	size += bstd.SizeInt64() // length MaxTTL
 
 	// Policies
 	size += bstd.SizeUInt16()      // length Policies
@@ -64,6 +68,9 @@ func (t *Token) MarshalBinary() ([]byte, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot marshal Expiration")
 	}
+
+	// MaxTTL
+	n = bstd.MarshalInt64(n, buf, int64(t.MaxTTL))
 
 	// Policies
 	n = bstd.MarshalUInt16(n, buf, uint16(len(t.Policies)))
@@ -117,6 +124,13 @@ func (t *Token) UnmarshalBinary(data []byte) error {
 	if err := t.Expiration.UnmarshalBinary(exp); err != nil {
 		return errors.Wrap(err, "cannot unmarshal binary Expiration")
 	}
+
+	// MaxTTL
+	var maxTTL int64
+	if n, maxTTL, err = bstd.UnmarshalInt64(n, data); err != nil {
+		return errors.Wrap(err, "cannot unmarshal MaxTTL")
+	}
+	t.MaxTTL = time.Duration(maxTTL)
 
 	// Policies
 	if n, num, err = bstd.UnmarshalUInt16(n, data); err != nil {

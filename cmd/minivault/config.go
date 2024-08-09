@@ -4,9 +4,9 @@ import (
 	"crypto/x509/pkix"
 	"emperror.dev/errors"
 	"github.com/BurntSushi/toml"
-	loaderConfig "github.com/je4/trustutil/v2/pkg/config"
+	"github.com/je4/certloader/v2/pkg/loader"
 	"github.com/je4/utils/v2/pkg/config"
-	"github.com/je4/utils/v2/pkg/zLogger"
+	"github.com/je4/utils/v2/pkg/stashconfig"
 	"io/fs"
 	"os"
 	"strings"
@@ -19,24 +19,24 @@ type BadgerStoreConfig struct {
 }
 
 type MiniVaultConfig struct {
-	LocalAddr    string                 `toml:"localaddr"`
-	AdminAddr    config.EnvString       `toml:"adminaddr"`
-	AdminBearer  config.EnvString       `toml:"adminbearer"`
-	ExternalAddr string                 `toml:"externaladdr"`
-	CA           config.EnvString       `toml:"ca"`
-	CAKey        config.EnvString       `toml:"cakey"`
-	CAPassword   config.EnvString       `toml:"capassword"`
-	CertName     *pkix.Name             `toml:"certname"`
-	WebTLS       loaderConfig.TLSConfig `toml:"webtls"`
-	AdminTLS     loaderConfig.TLSConfig `toml:"admintls"`
-	PolicyFile   string                 `toml:"policyfile"`
-	TokenXOR     uint64                 `toml:"tokenxor"`
-	RndSize      int                    `toml:"rndsize"`
-	LogFile      string                 `toml:"logfile"`
-	LogLevel     string                 `toml:"loglevel"`
-	Log          zLogger.Config         `toml:"log"`
-	TokenStore   string                 `toml:"tokenstore"`
-	BadgerStore  *BadgerStoreConfig     `toml:"badgerstore"`
+	LocalAddr    string             `toml:"localaddr"`
+	AdminAddr    config.EnvString   `toml:"adminaddr"`
+	AdminBearer  config.EnvString   `toml:"adminbearer"`
+	ExternalAddr string             `toml:"externaladdr"`
+	CA           config.EnvString   `toml:"ca"`
+	CAKey        config.EnvString   `toml:"cakey"`
+	CAPassword   config.EnvString   `toml:"capassword"`
+	CertName     *pkix.Name         `toml:"certname"`
+	WebTLS       loader.Config      `toml:"webtls"`
+	AdminTLS     loader.Config      `toml:"admintls"`
+	PolicyFile   string             `toml:"policyfile"`
+	TokenXOR     uint64             `toml:"tokenxor"`
+	RndSize      int                `toml:"rndsize"`
+	LogFile      string             `toml:"logfile"`
+	LogLevel     string             `toml:"loglevel"`
+	Log          stashconfig.Config `toml:"log"`
+	TokenStore   string             `toml:"tokenstore"`
+	BadgerStore  *BadgerStoreConfig `toml:"badgerstore"`
 }
 
 func LoadMiniVaultConfig(fSys fs.FS, fp string, conf *MiniVaultConfig) error {

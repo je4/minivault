@@ -15,7 +15,8 @@ type CreateStruct struct {
 	Type      string            `json:"type" example:"client_cert"`
 	Policies  []string          `json:"Policies" example:"policy1,policy2"`
 	Meta      map[string]string `json:"meta" example:"key1:value1,key2:value2"`
-	TTL       string            `json:"ttl" example:"1h"`
+	TTL       string            `json:"ttl" example:"1000h"`
+	MaxTTL    string            `json:"maxttl" example:"3h"`
 	Renewable bool              `json:"renewable" example:"false"`
 }
 
@@ -69,7 +70,14 @@ func (m *Manager) Create(parent string, options *CreateStruct) (string, error) {
 	}
 	ttl, err := time.ParseDuration(options.TTL)
 	if err != nil {
-		return "", errors.Wrapf(err, "cannot parse duration %s", options.TTL)
+		return "", errors.Wrapf(err, "cannot parse TTL duration %s", options.TTL)
+	}
+	var maxTTL time.Duration
+	if options.MaxTTL != "" {
+		maxTTL, err = time.ParseDuration(options.MaxTTL)
+		if err != nil {
+			return "", errors.Wrapf(err, "cannot parse maxTTL duration %s", options.MaxTTL)
+		}
 	}
 
 	now := time.Now()
@@ -103,8 +111,9 @@ func (m *Manager) Create(parent string, options *CreateStruct) (string, error) {
 				return "", errors.Errorf("Parent token %s is not a Parent token", parent)
 			}
 			// Todo: optimize code
+			parentPolicies := parentToken.GetPolicies()
 			for _, p := range options.Policies {
-				if !slices.Contains(parentToken.GetPolicies(), p) {
+				if !slices.Contains(parentPolicies, p) {
 					return "", errors.Errorf("Parent token %s has no policy %s", parent, p)
 				}
 			}
@@ -120,7 +129,7 @@ func (m *Manager) Create(parent string, options *CreateStruct) (string, error) {
 		return "", errors.Wrap(err, "cannot generate random data")
 	}
 	name := fmt.Sprintf("%s.%x.%s", TypePrefix[t], uint64(now.UnixNano())^m.xor, hex.EncodeToString(rndData))
-	token := NewToken(t, now.Add(ttl), options.Policies, options.Meta)
+	token := NewToken(t, now.Add(ttl), maxTTL, options.Policies, options.Meta)
 	tokenBin, err := token.MarshalBinary()
 	if err != nil {
 		return "", errors.Wrap(err, "cannot marshal token")

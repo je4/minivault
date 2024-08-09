@@ -11,7 +11,7 @@ require (
 	github.com/gin-contrib/cors v1.7.2
 	github.com/gin-gonic/gin v1.10.0
 	github.com/je4/trustutil/v2 v2.0.19
-	github.com/je4/utils/v2 v2.0.41
+	github.com/je4/utils/v2 v2.0.47
 	github.com/swaggo/swag v1.16.3
 	gitlab.switch.ch/ub-unibas/go-ublogger v0.0.0-20240612084645-ba4f8357c0d4
 )

@@ -71,6 +71,7 @@ func (m *Manager) load() error {
 	m.Lock()
 	defer m.Unlock()
 	var policies = policyConfig{}
+	m.logger.Info().Msgf("loading policies from %s", m.configFile)
 	if _, err := toml.DecodeFile(m.configFile, &policies); err != nil {
 		return errors.Wrapf(err, "cannot decode file %s", m.configFile)
 	}

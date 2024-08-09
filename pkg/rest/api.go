@@ -256,7 +256,7 @@ func (ctrl *controller) getToken(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, token)
 }
 
-// getToken godoc
+// deleteToken godoc
 // @Summary      delete token
 // @ID			 delete-token-delete
 // @Description  delete token content
@@ -284,7 +284,7 @@ func (ctrl *controller) deleteToken(ctx *gin.Context) {
 }
 
 // createToken godoc
-// @Summary      does pong
+// @Summary      creates a new token
 // @ID			 post-create-token
 // @Description  create a new token
 // @Tags         mediaserver
@@ -378,7 +378,7 @@ func (ctrl *controller) createCert(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, HTTPResultMessage{Message: fmt.Sprintf("cannot parse duration %s: %s", createStruct.TTL, err.Error())})
 		return
 	}
-	if tokenData.Expiration.After(time.Now().Add(ttl)) {
+	if tokenData.Expiration.Before(time.Now().Add(ttl)) {
 		ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: "token expires before certificate"})
 		return
 	}
