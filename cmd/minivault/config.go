@@ -31,6 +31,9 @@ type MiniVaultConfig struct {
 	AdminTLS     loader.Config      `toml:"admintls"`
 	PolicyFile   string             `toml:"policyfile"`
 	TokenXOR     uint64             `toml:"tokenxor"`
+	TokenMaxTTL  config.Duration    `toml:"tokenmaxttl"`
+	CertMaxTTL   config.Duration    `toml:"certmaxttl"`
+	ParentMaxTTL config.Duration    `toml:"parentmaxttl"`
 	RndSize      int                `toml:"rndsize"`
 	LogFile      string             `toml:"logfile"`
 	LogLevel     string             `toml:"loglevel"`

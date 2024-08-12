@@ -94,7 +94,7 @@ func (ctrl *controller) Init(tlsConfig, adminTLSConfig *tls.Config) error {
 	if err != nil {
 		return errors.Wrapf(err, "invalid admin address '%s'", ctrl.adminAddr)
 	}
-	ctrl.router.Use(cors.Default(), gin.Recovery(), gin.Logger(), func(ctx *gin.Context) {
+	ctrl.router.Use(cors.Default(), gin.Recovery(), func(ctx *gin.Context) {
 		if _, rPort, err := net.SplitHostPort(ctx.Request.Host); err == nil {
 			if rPort == port {
 				auth := ctx.GetHeader("Authorization")
@@ -383,27 +383,73 @@ func (ctrl *controller) createCert(ctx *gin.Context) {
 		return
 	}
 	// check dns and uri values with token
+	dnsNames := []string{}
+	uris := []string{}
+	ips := []string{}
 	for _, policyID := range tokenData.GetPolicies() {
 		if policy, ok := ctrl.policyManager.Get(policyID); ok {
 			for _, dnsName := range createStruct.DNSNames {
-				if !slices.Contains(policy.DNS, dnsName) {
-					ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: fmt.Sprintf("dns name %s not allowed", dnsName)})
-					return
+				if slices.Contains(policy.DNS, dnsName) {
+					dnsNames = append(dnsNames, dnsName)
 				}
 			}
 			for _, uri := range createStruct.URIs {
-				if !slices.Contains(policy.URIs, uri) {
-					ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: fmt.Sprintf("uri %s not allowed", uri)})
-					return
+				if slices.Contains(policy.URIs, uri) {
+					uris = append(uris, uri)
+				}
+			}
+			for _, ip := range createStruct.IPs {
+				if slices.Contains(policy.IPs, ip) {
+					ips = append(ips, ip)
 				}
 			}
 		}
+	}
+	slices.Compact(dnsNames)
+	if len(dnsNames) != len(createStruct.DNSNames) {
+		notAllowed := []string{}
+		for _, dnsName := range createStruct.DNSNames {
+			if !slices.Contains(dnsNames, dnsName) {
+				notAllowed = append(notAllowed, dnsName)
+			}
+		}
+		ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: fmt.Sprintf("dns name %v not allowed", notAllowed)})
+		return
+	}
+	if len(uris) != len(createStruct.URIs) {
+		notAllowed := []string{}
+		for _, uri := range createStruct.URIs {
+			if !slices.Contains(uris, uri) {
+				notAllowed = append(notAllowed, uri)
+			}
+		}
+		ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: fmt.Sprintf("uri %v not allowed", notAllowed)})
+		return
+	}
+	if len(ips) != len(createStruct.IPs) {
+		notAllowed := []string{}
+		for _, ip := range createStruct.IPs {
+			if !slices.Contains(ips, ip) {
+				notAllowed = append(notAllowed, ip)
+			}
+		}
+		ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: fmt.Sprintf("ip %v not allowed", notAllowed)})
+		return
+	}
+	var ipips = []net.IP{}
+	for _, ipStr := range createStruct.IPs {
+		ip := net.ParseIP(ipStr)
+		if ip == nil {
+			ctx.JSON(http.StatusBadRequest, HTTPResultMessage{Message: fmt.Sprintf("cannot parse IP %s", ipStr)})
+			return
+		}
+		ipips = append(ipips, ip)
 	}
 	cert, key, err := ctrl.certManager.Create(
 		slices.Contains([]token.Type{token.TokenClientServerCert, token.TokenClientCert}, certType),
 		slices.Contains([]token.Type{token.TokenClientServerCert, token.TokenServerCert}, certType),
 		createStruct.URIs,
-		[]net.IP{},
+		ipips,
 		createStruct.DNSNames,
 		ttl,
 	)

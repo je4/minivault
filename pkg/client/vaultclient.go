@@ -32,6 +32,31 @@ type Client struct {
 	baseURL string
 }
 
+func (c *Client) GetToken(t string) (*token.Token, error) {
+	req, err := http.NewRequest("GET", c.baseURL+"/auth/token/get", nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot create request")
+	}
+	req.Header.Set("X-Vault-Token", t)
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot get token")
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		if result, err := io.ReadAll(resp.Body); err == nil {
+			return nil, errors.Errorf("cannot get token: %s - %s", resp.Status, string(result))
+		} else {
+			return nil, errors.Wrapf(err, "cannot get token: %s", resp.Status)
+		}
+	}
+	var result = &token.Token{}
+	if err := json.NewDecoder(resp.Body).Decode(result); err != nil {
+		return nil, errors.Wrap(err, "cannot decode token")
+	}
+	return result, nil
+}
+
 func (c *Client) CreateToken(parentToken string, param *token.CreateStruct) (string, error) {
 	data, err := json.Marshal(param)
 	if err != nil {

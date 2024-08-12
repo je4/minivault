@@ -2,4 +2,5 @@
     Name = "ubmedia.mediaserverdb"
     URIs = ["grpc:miniresolverproto.MiniResolver"]
     DNS = ["ubmedia.mediaserverproto.Database"]
+    IPs = []
     MaxTTL = "10h"

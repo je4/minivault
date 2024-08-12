@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"sync"
 	"syscall"
+	"time"
 )
 
 var configfile = flag.String("config", "", "location of toml configuration file")
@@ -104,7 +105,7 @@ func main() {
 	}
 	defer tokenStore.Close()
 
-	tokenManager := token.NewManager(tokenStore, conf.TokenXOR, conf.RndSize)
+	tokenManager := token.NewManager(tokenStore, conf.TokenXOR, time.Duration(conf.TokenMaxTTL), time.Duration(conf.CertMaxTTL), time.Duration(conf.ParentMaxTTL), conf.RndSize)
 
 	var wg = &sync.WaitGroup{}
 
@@ -118,7 +119,7 @@ func main() {
 		logger.Fatal().Err(err).Msg("cannot decode ca")
 	}
 
-	certManager := localca.NewManager(ca, key, conf.CertName, certutil.DefaultKeyType, logger)
+	certManager := localca.NewManager(ca, key, conf.CertName, certutil.DefaultKeyType, time.Duration(conf.CertMaxTTL), logger)
 
 	webTLSConfig, webLoader, err := loader.CreateServerLoader(false, &conf.WebTLS, nil, logger)
 	if err != nil {

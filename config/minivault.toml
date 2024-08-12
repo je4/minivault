@@ -5,6 +5,9 @@ externaladdr = "https://localhost:8759"
 loglevel = "DEBUG"
 policyfile = "config/policies.toml"
 tokenxor = 4192431797130687763
+tokenmaxttl = "2h"
+certmaxttl = "10m"
+parentmaxttl = "1000h"
 rndsize = 8
 ca = """-----BEGIN CERTIFICATE-----
 MIICxTCCAkqgAwIBAgIGAY4FTF/mMAoGCCqGSM49BAMDMIGYMQswCQYDVQQGEwJD

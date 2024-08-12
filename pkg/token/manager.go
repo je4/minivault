@@ -20,20 +20,26 @@ type CreateStruct struct {
 	Renewable bool              `json:"renewable" example:"false"`
 }
 
-func NewManager(store Store, xor uint64, rndSize int) *Manager {
+func NewManager(store Store, xor uint64, tokenMaxTTL time.Duration, certMaxTTL time.Duration, parentMaxTTL time.Duration, rndSize int) *Manager {
 	return &Manager{
-		Mutex:   sync.Mutex{},
-		store:   store,
-		xor:     xor,
-		rndSize: rndSize,
+		Mutex:        sync.Mutex{},
+		store:        store,
+		xor:          xor,
+		tokenMaxTTL:  tokenMaxTTL,
+		certMaxTTL:   certMaxTTL,
+		parentMaxTTL: parentMaxTTL,
+		rndSize:      rndSize,
 	}
 }
 
 type Manager struct {
 	sync.Mutex
-	store   Store
-	xor     uint64
-	rndSize int
+	store        Store
+	xor          uint64
+	rndSize      int
+	tokenMaxTTL  time.Duration
+	certMaxTTL   time.Duration
+	parentMaxTTL time.Duration
 }
 
 func (m *Manager) Get(name string) (*Token, error) {
@@ -68,26 +74,63 @@ func (m *Manager) Create(parent string, options *CreateStruct) (string, error) {
 	if !ok {
 		return "", errors.Errorf("unknown token type %s", options.Type)
 	}
-	ttl, err := time.ParseDuration(options.TTL)
-	if err != nil {
-		return "", errors.Wrapf(err, "cannot parse TTL duration %s", options.TTL)
-	}
+	var ttl time.Duration
 	var maxTTL time.Duration
-	if options.MaxTTL != "" {
-		maxTTL, err = time.ParseDuration(options.MaxTTL)
-		if err != nil {
-			return "", errors.Wrapf(err, "cannot parse maxTTL duration %s", options.MaxTTL)
-		}
-	}
-
+	var err error
 	now := time.Now()
-	exp := now.Add(ttl)
+	var exp time.Time
 
 	var parentToken *Token
-	if parent != "" {
-		if t == TokenParent || t == TokenRoot {
-			return "", errors.Errorf("parent and root token cannot have parent")
+	if t == TokenParent || t == TokenRoot {
+		if parent == "" {
+			return "", errors.Errorf("parent or root token cannot have a parent")
 		}
+		ttl = m.parentMaxTTL
+		if options.TTL != "" {
+			ttl, err = time.ParseDuration(options.TTL)
+			if err != nil {
+				return "", errors.Wrapf(err, "cannot parse parent token TTL duration %s", options.TTL)
+			}
+		}
+		if ttl > m.parentMaxTTL {
+			return "", errors.Errorf("parent token ttl %s is greater than max ttl %s", ttl.String(), m.tokenMaxTTL.String())
+		}
+		maxTTL = m.tokenMaxTTL
+		if options.MaxTTL != "" {
+			maxTTL, err = time.ParseDuration(options.MaxTTL)
+			if err != nil {
+				return "", errors.Wrapf(err, "cannot parse token maxTTL duration %s", options.MaxTTL)
+			}
+		}
+		if maxTTL > m.tokenMaxTTL {
+			return "", errors.Errorf("token max ttl %s is greater than max ttl %s", maxTTL.String(), m.certMaxTTL.String())
+		}
+		exp = now.Add(ttl)
+	} else {
+		if parent == "" {
+			return "", errors.Errorf("standard token needs a parent")
+		}
+		ttl = m.tokenMaxTTL
+		if options.TTL != "" {
+			ttl, err = time.ParseDuration(options.TTL)
+			if err != nil {
+				return "", errors.Wrapf(err, "cannot parse token TTL duration %s", options.TTL)
+			}
+		}
+		if ttl > m.tokenMaxTTL {
+			return "", errors.Errorf("token ttl %s is greater than max ttl %s", ttl.String(), m.tokenMaxTTL.String())
+		}
+		maxTTL = m.certMaxTTL
+		if options.MaxTTL != "" {
+			maxTTL, err = time.ParseDuration(options.MaxTTL)
+			if err != nil {
+				return "", errors.Wrapf(err, "cannot parse cert maxTTL duration %s", options.MaxTTL)
+			}
+		}
+		if maxTTL > m.certMaxTTL {
+			return "", errors.Errorf("cert max ttl %s is greater than max ttl %s", maxTTL.String(), m.certMaxTTL.String())
+		}
+		exp = now.Add(ttl)
 		p, err := m.store.Get(context.Background(), parent)
 		if err != nil {
 			return "", errors.Wrapf(err, "cannot get Parent token %s", parent)
