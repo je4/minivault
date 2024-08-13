@@ -123,7 +123,7 @@ func (ctrl *controller) Init(tlsConfig, adminTLSConfig *tls.Config) error {
 	v1.GET("/cert/ca/pem", ctrl.getCA)
 	v1.GET("/auth/token/get", ctrl.getToken)
 	v1.DELETE("/auth/token/delete", ctrl.deleteToken)
-	ctrl.router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	ctrl.router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.NewHandler(), ginSwagger.InstanceName("MiniVault")))
 
 	ctrl.server = http.Server{
 		Addr:      ctrl.addr,
