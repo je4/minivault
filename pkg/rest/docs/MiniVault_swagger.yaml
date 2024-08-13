@@ -1,10 +1,17 @@
 definitions:
   cert.CreateStruct:
     properties:
-      dnnames:
+      dnsnames:
         example:
         - dns1
         - dns2
+        items:
+          type: string
+        type: array
+      ips:
+        example:
+        - ip1
+        - ip2
         items:
           type: string
         type: array

@@ -355,7 +355,7 @@
         "cert.CreateStruct": {
             "type": "object",
             "properties": {
-                "dnnames": {
+                "dnsnames": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -363,6 +363,16 @@
                     "example": [
                         "dns1",
                         "dns2"
+                    ]
+                },
+                "ips": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "ip1",
+                        "ip2"
                     ]
                 },
                 "ttl": {

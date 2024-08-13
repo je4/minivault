@@ -49,8 +49,8 @@ func NewMainController(addr, extAddr, adminAddr, adminBearer string, tlsConfig, 
 
 	// programmatically set swagger info
 	//docs.SwaggerInfo.Host = strings.TrimRight(fmt.Sprintf("%s:%s", u.Hostname(), u.Port()), " :")
-	docs.SwaggerInfo.BasePath = "/" + strings.Trim(subpath+BASEPATH, "/")
-	docs.SwaggerInfo.Schemes = []string{"https"}
+	docs.SwaggerInfoMiniVault.BasePath = "/" + strings.Trim(subpath+BASEPATH, "/")
+	docs.SwaggerInfoMiniVault.Schemes = []string{"https"}
 
 	gin.SetMode(gin.DebugMode)
 	router := gin.Default()

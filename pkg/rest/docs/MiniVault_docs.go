@@ -3,7 +3,7 @@ package docs
 
 import "github.com/swaggo/swag"
 
-const docTemplate = `{
+const docTemplateMiniVault = `{
     "schemes": {{ marshal .Schemes }},
     "swagger": "2.0",
     "info": {
@@ -363,7 +363,7 @@ const docTemplate = `{
         "cert.CreateStruct": {
             "type": "object",
             "properties": {
-                "dnnames": {
+                "dnsnames": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -371,6 +371,16 @@ const docTemplate = `{
                     "example": [
                         "dns1",
                         "dns2"
+                    ]
+                },
+                "ips": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "ip1",
+                        "ip2"
                     ]
                 },
                 "ttl": {
@@ -540,20 +550,20 @@ const docTemplate = `{
     }
 }`
 
-// SwaggerInfo holds exported Swagger Info so clients can modify it
-var SwaggerInfo = &swag.Spec{
+// SwaggerInfoMiniVault holds exported Swagger Info so clients can modify it
+var SwaggerInfoMiniVault = &swag.Spec{
 	Version:          "1.0",
 	Host:             "",
 	BasePath:         "",
 	Schemes:          []string{},
 	Title:            "MiniVault API",
 	Description:      "MiniVault API for managing tokens and certificates",
-	InfoInstanceName: "swagger",
-	SwaggerTemplate:  docTemplate,
+	InfoInstanceName: "MiniVault",
+	SwaggerTemplate:  docTemplateMiniVault,
 	LeftDelim:        "{{",
 	RightDelim:       "}}",
 }
 
 func init() {
-	swag.Register(SwaggerInfo.InstanceName(), SwaggerInfo)
+	swag.Register(SwaggerInfoMiniVault.InstanceName(), SwaggerInfoMiniVault)
 }
