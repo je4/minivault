@@ -4,3 +4,17 @@
     DNS = ["ubmedia.mediaserverproto.Database"]
     IPs = []
     MaxTTL = "10h"
+
+[[policy]]
+Name = "miniresolver"
+URIs = []
+DNS = ["localhost"]
+IPs = ["127.0.0.1", "::1"]
+MaxTTL = "10h"
+
+[[policy]]
+Name = "mediaserveraction"
+URIs = []
+DNS = ["localhost"]
+IPs = ["127.0.0.1", "::1"]
+MaxTTL = "10h"

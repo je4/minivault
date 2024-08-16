@@ -82,7 +82,7 @@ func (m *Manager) Create(parent string, options *CreateStruct) (string, error) {
 
 	var parentToken *Token
 	if t == TokenParent || t == TokenRoot {
-		if parent == "" {
+		if parent != "" {
 			return "", errors.Errorf("parent or root token cannot have a parent")
 		}
 		ttl = m.parentMaxTTL
@@ -103,7 +103,7 @@ func (m *Manager) Create(parent string, options *CreateStruct) (string, error) {
 			}
 		}
 		if maxTTL > m.tokenMaxTTL {
-			return "", errors.Errorf("token max ttl %s is greater than max ttl %s", maxTTL.String(), m.certMaxTTL.String())
+			return "", errors.Errorf("token max ttl %s is greater than max ttl %s", maxTTL.String(), m.tokenMaxTTL.String())
 		}
 		exp = now.Add(ttl)
 	} else {
