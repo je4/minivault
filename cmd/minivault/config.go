@@ -7,8 +7,10 @@ import (
 	"github.com/je4/certloader/v2/pkg/loader"
 	"github.com/je4/utils/v2/pkg/config"
 	"github.com/je4/utils/v2/pkg/stashconfig"
+	"gopkg.in/yaml.v3"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -55,10 +57,21 @@ func LoadMiniVaultConfig(fSys fs.FS, fp string, conf *MiniVaultConfig) error {
 	if err != nil {
 		return errors.Wrapf(err, "cannot read file [%v] %s", fSys, fp)
 	}
-	_, err = toml.Decode(string(data), conf)
+	switch filepath.Ext(fp) {
+	case ".yaml", ".yml":
+		err = yaml.Unmarshal(data, conf)
+	case ".toml":
+		_, err = toml.Decode(string(data), conf)
+	}
 	if err != nil {
 		return errors.Wrapf(err, "error loading config file %v", fp)
 	}
 	conf.TokenStore = strings.ToLower(conf.TokenStore)
+
+	data, err = yaml.Marshal(conf)
+	if err == nil {
+		println(string(data))
+	}
+
 	return nil
 }
