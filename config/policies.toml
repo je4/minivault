@@ -1,9 +1,9 @@
 [[policy]]
-    Name = "ubmedia.mediaserverdb"
-    URIs = ["grpc:miniresolverproto.MiniResolver"]
-    DNS = ["ubmedia.mediaserverproto.Database"]
-    IPs = []
-    MaxTTL = "10h"
+Name = "ubmedia.mediaserverdb"
+URIs = ["grpc:miniresolverproto.MiniResolver"]
+DNS = ["ubmedia.mediaserverproto.Database"]
+IPs = []
+MaxTTL = "10h"
 
 [[policy]]
 Name = "miniresolver"
@@ -14,7 +14,14 @@ MaxTTL = "10h"
 
 [[policy]]
 Name = "mediaserveraction"
-URIs = []
-DNS = ["localhost"]
+URIs = ["grpc:miniresolverproto.MiniResolver", "grpc:instance_ubimage.mediaserverproto.Action", "grpc:ubmedia.mediaserverproto.Database", "grpc:mediathek.mediaserverproto.Database"]
+DNS = ["localhost", "ubmedia.mediaserverproto.Action", "ubmedia.mediaserverproto.ActionDispatcher", "mediathek.mediaserverproto.Action", "mediathek.mediaserverproto.ActionDispatcher"]
 IPs = ["127.0.0.1", "::1"]
+MaxTTL = "10h"
+
+[[policy]]
+Name = "instance_ubimage.mediaserveraction"
+URIs = ["grpc:ubmedia.mediaserverproto.Database", "grpc:mediathek.mediaserverproto.Database", "grpc:miniresolverproto.MiniResolver", "grpc:ubmedia.mediaserverproto.ActionDispatcher", "grpc:mediathek.mediaserverproto.ActionDispatcher"]
+DNS = ["instance_ubimage.mediaserverproto.Action"]
+IPs = []
 MaxTTL = "10h"
