@@ -25,8 +25,7 @@ KwYBBQUHAwIGCCsGAQUFBwMBMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFH+I
 PuzNyAOrQ+rMTtywGqm3Z5ARMAoGCCqGSM49BAMDA2kAMGYCMQDJNau3j1v1FQHQ
 n7kn+gEATGOm+9fBsgUCGXmKvLZPIJI3NI2URLmlmASdEIrg/N4CMQCNQio9BHom
 JYLotIXmdUEmKuXZeKoc0eR1jA7kWdJNOvEpE73mx/zutDeNl3hRVP0=
------END CERTIFICATE-----
-"""
+-----END CERTIFICATE-----"""
 
 cakey = """-----BEGIN EC PRIVATE KEY-----
 MIG2AgEAMBAGByqGSM49AgEGBSuBBAAiBIGeMIGbAgEBBDCSr6Ye4kOH8K8/rVPk
@@ -67,7 +66,7 @@ level = "debug"
 logstashhost="localhost"
 logstashport=5046
 logstashtracelevel="ERROR"
-namespace="miniresolver"
+namespace="minivault"
 dataset=""
 #dataset="logs-mediaserver"
 [log.stash.tls]
