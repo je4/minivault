@@ -11,6 +11,9 @@ import (
 	"time"
 )
 
+var ErrParentTokenNotFound = errors.New("parent token not found")
+var ErrParentTokenExpired = errors.New("parent token expired")
+
 type CreateStruct struct {
 	Type      string            `json:"type" example:"client_cert"`
 	Policies  []string          `json:"Policies" example:"policy1,policy2"`
@@ -136,7 +139,7 @@ func (m *Manager) Create(parent string, options *CreateStruct) (string, error) {
 			return "", errors.Wrapf(err, "cannot get Parent token %s", parent)
 		}
 		if p == nil {
-			return "", errors.Errorf("Parent token %s not found", parent)
+			return "", errors.Wrapf(ErrParentTokenNotFound, "Parent token %s not found", parent)
 		}
 		parentToken = &Token{}
 		if err := parentToken.UnmarshalBinary(p); err != nil {

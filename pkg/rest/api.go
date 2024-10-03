@@ -310,12 +310,16 @@ func (ctrl *controller) createToken(ctx *gin.Context) {
 		ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: "only admin can create tokens without parent token"})
 		return
 	}
-	token, err := ctrl.tokenManager.Create(parentToken, createStruct)
+	t, err := ctrl.tokenManager.Create(parentToken, createStruct)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, HTTPResultMessage{Message: err.Error()})
+		if errors.Is(err, token.ErrParentTokenNotFound) {
+			ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: err.Error()})
+		} else {
+			ctx.JSON(http.StatusInternalServerError, HTTPResultMessage{Message: err.Error()})
+		}
 		return
 	}
-	ctx.JSON(http.StatusOK, token)
+	ctx.JSON(http.StatusOK, t)
 }
 
 type CertResultMessage struct {
