@@ -48,6 +48,25 @@ definitions:
       t:
         $ref: '#/definitions/token.Type'
     type: object
+  policy.Policy:
+    properties:
+      dns:
+        items:
+          type: string
+        type: array
+      ips:
+        items:
+          type: string
+        type: array
+      maxttl:
+        $ref: '#/definitions/time.Duration'
+      name:
+        type: string
+      uris:
+        items:
+          type: string
+        type: array
+    type: object
   rest.CertResultMessage:
     properties:
       ca:
@@ -353,6 +372,44 @@ paths:
       security:
       - BearerAuth: []
       summary: does pong
+      tags:
+      - mediaserver
+  /policy/{policy}:
+    get:
+      description: get policy content
+      operationId: get-policy-get
+      parameters:
+      - description: policy name
+        in: path
+        name: policy
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/policy.Policy'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/rest.HTTPResultMessage'
+      security:
+      - BearerAuth: []
+      summary: lists policy contents
       tags:
       - mediaserver
 securityDefinitions:

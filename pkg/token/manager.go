@@ -13,6 +13,8 @@ import (
 
 var ErrParentTokenNotFound = errors.New("parent token not found")
 var ErrParentTokenExpired = errors.New("parent token expired")
+var ErrTTLOutOfRange = errors.New("ttl out of range")
+var ErrInvalidToken = errors.New("invalid token format")
 
 type CreateStruct struct {
 	Type      string            `json:"type" example:"client_cert"`
@@ -92,21 +94,21 @@ func (m *Manager) Create(parent string, options *CreateStruct) (string, error) {
 		if options.TTL != "" {
 			ttl, err = time.ParseDuration(options.TTL)
 			if err != nil {
-				return "", errors.Wrapf(err, "cannot parse parent token TTL duration %s", options.TTL)
+				return "", errors.Append(ErrInvalidToken, errors.Wrapf(err, "cannot parse parent token TTL duration %s", options.TTL))
 			}
 		}
 		if ttl > m.parentMaxTTL {
-			return "", errors.Errorf("parent token ttl %s is greater than max ttl %s", ttl.String(), m.tokenMaxTTL.String())
+			return "", errors.Wrapf(ErrTTLOutOfRange, "parent token ttl %s is greater than max ttl %s", ttl.String(), m.parentMaxTTL.String())
 		}
 		maxTTL = m.tokenMaxTTL
 		if options.MaxTTL != "" {
 			maxTTL, err = time.ParseDuration(options.MaxTTL)
 			if err != nil {
-				return "", errors.Wrapf(err, "cannot parse token maxTTL duration %s", options.MaxTTL)
+				return "", errors.Append(ErrInvalidToken, errors.Wrapf(err, "cannot parse token maxTTL duration %s", options.MaxTTL))
 			}
 		}
 		if maxTTL > m.tokenMaxTTL {
-			return "", errors.Errorf("token max ttl %s is greater than max ttl %s", maxTTL.String(), m.tokenMaxTTL.String())
+			return "", errors.Wrapf(ErrTTLOutOfRange, "token max ttl %s is greater than max ttl %s", maxTTL.String(), m.tokenMaxTTL.String())
 		}
 		exp = now.Add(ttl)
 	} else {

@@ -7,7 +7,7 @@ policyfile = "config/policies.toml"
 tokenxor = 4192431797130687763
 tokenmaxttl = "2h"
 certmaxttl = "10m"
-parentmaxttl = "1000h"
+parentmaxttl = "10000h"
 rndsize = 8
 ca = """-----BEGIN CERTIFICATE-----
 MIICxTCCAkqgAwIBAgIGAY4FTF/mMAoGCCqGSM49BAMDMIGYMQswCQYDVQQGEwJD

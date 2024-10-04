@@ -40,3 +40,30 @@ DNS = ["localhost"]
 IPs = ["127.0.0.1", "::1"]
 MaxTTL = "10h"
 
+[[policy]]
+Name = "remotefs"
+URIs = ["grpc:miniresolverproto.MiniResolver"]
+DNS = ["localhost"]
+IPs = ["127.0.0.1", "::1"]
+MaxTTL = "10h"
+
+[[policy]]
+Name = "ubmedia.mediaserverdeleter"
+URIs = ["grpc:miniresolverproto.MiniResolver", "grpc:ubmedia.mediaserverproto.Action", "grpc:ubmedia.mediaserverproto.Database"]
+DNS = ["localhost", "ubmedia.mediaserverproto.Deleter"]
+IPs = ["127.0.0.1", "::1"]
+MaxTTL = "10h"
+
+
+[[policy]]
+Name = "ubmedia.mediaserverapi"
+URIs = [
+    "grpc:ubmedia.mediaserverproto.Database",
+    "grpc:mediathek.mediaserverproto.Database",
+    "grpc:miniresolverproto.MiniResolver",
+    "grpc:ubmedia.mediaserverproto.Action",
+    "grpc:mediathek.mediaserverproto.Action",
+    "grpc:ubmedia.mediaserverproto.ActionDispatcher"]
+DNS = ["localhost"]
+IPs = ["127.0.0.1", "::1"]
+MaxTTL = "10h"

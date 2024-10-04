@@ -118,6 +118,7 @@ func (ctrl *controller) Init(tlsConfig, adminTLSConfig *tls.Config) error {
 	v1 := ctrl.router.Group(BASEPATH)
 
 	v1.GET("/ping", ctrl.ping)
+	v1.GET("/policy/:policy", ctrl.getPolicy)
 	v1.POST("/auth/token/create", ctrl.createToken)
 	v1.POST("/cert/create", ctrl.createCert)
 	v1.GET("/cert/ca/pem", ctrl.getCA)
@@ -256,6 +257,35 @@ func (ctrl *controller) getToken(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, token)
 }
 
+// getPolicy godoc
+// @Summary      lists policy contents
+// @ID			 get-policy-get
+// @Description  get policy content
+// @Tags         mediaserver
+// @Security 	 BearerAuth
+// @Produce      plain
+// @Param 		 policy path string true "policy name"
+// @Success      200  {object}  policy.Policy
+// @Failure      400  {object}  HTTPResultMessage
+// @Failure      401  {object}  HTTPResultMessage
+// @Failure      404  {object}  HTTPResultMessage
+// @Failure      500  {object}  HTTPResultMessage
+// @Router       /policy/{policy} [get]
+func (ctrl *controller) getPolicy(ctx *gin.Context) {
+	policyID := ctx.Param("policy")
+	if policyID == "" {
+		ctx.JSON(http.StatusBadRequest, HTTPResultMessage{Message: "missing policy"})
+		return
+	}
+	policy, ok := ctrl.policyManager.Get(policyID)
+	if !ok {
+		ctx.JSON(http.StatusNotFound, HTTPResultMessage{Message: fmt.Sprintf("policy %s not found", policyID)})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, policy)
+}
+
 // deleteToken godoc
 // @Summary      delete token
 // @ID			 delete-token-delete
@@ -312,9 +342,14 @@ func (ctrl *controller) createToken(ctx *gin.Context) {
 	}
 	t, err := ctrl.tokenManager.Create(parentToken, createStruct)
 	if err != nil {
-		if errors.Is(err, token.ErrParentTokenNotFound) {
+		switch {
+		case errors.Is(err, token.ErrParentTokenNotFound):
 			ctx.JSON(http.StatusUnauthorized, HTTPResultMessage{Message: err.Error()})
-		} else {
+		case errors.Is(err, token.ErrInvalidToken):
+			ctx.JSON(http.StatusBadRequest, HTTPResultMessage{Message: err.Error()})
+		case errors.Is(err, token.ErrInvalidToken):
+			ctx.JSON(http.StatusBadRequest, HTTPResultMessage{Message: err.Error()})
+		default:
 			ctx.JSON(http.StatusInternalServerError, HTTPResultMessage{Message: err.Error()})
 		}
 		return

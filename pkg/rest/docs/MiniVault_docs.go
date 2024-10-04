@@ -357,6 +357,65 @@ const docTemplateMiniVault = `{
                     }
                 }
             }
+        },
+        "/policy/{policy}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "get policy content",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "mediaserver"
+                ],
+                "summary": "lists policy contents",
+                "operationId": "get-policy-get",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "policy name",
+                        "name": "policy",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/policy.Policy"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/rest.HTTPResultMessage"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -429,6 +488,35 @@ const docTemplateMiniVault = `{
                 },
                 "t": {
                     "$ref": "#/definitions/token.Type"
+                }
+            }
+        },
+        "policy.Policy": {
+            "type": "object",
+            "properties": {
+                "dns": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "ips": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "maxttl": {
+                    "$ref": "#/definitions/time.Duration"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "uris": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
